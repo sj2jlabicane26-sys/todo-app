@@ -1,0 +1,16 @@
+{
+  "name": "todo-list-manager",
+  "version": "1.0.0",
+  "description": "To-do list manager with scheduled push notifications",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "vapid-keys": "web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "web-push": "^3.6.7",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.4.5"
+  }
+}

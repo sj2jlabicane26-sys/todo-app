@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To-Do List Manager</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3d5a4c">
+<style>
+  :root {
+    --ink: #2b2b28;
+    --paper: #faf7f0;
+    --card: #ffffff;
+    --accent: #3d5a4c;
+    --accent-light: #e8efe9;
+    --line: #e3ded2;
+    --danger: #b5453f;
+    --muted: #8a8477;
+    --warn: #ad7a2c;
+    --warn-light: #f7ecd9;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 60px;
+  }
+
+  .app { width: 100%; max-width: 480px; }
+
+  header {
+    text-align: left;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 14px;
+  }
+
+  header h1 { font-size: 1.6rem; margin: 0 0 4px; letter-spacing: 0.3px; }
+  header p {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .permission-banner {
+    background: var(--warn-light);
+    border: 1px solid var(--warn);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.82rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .permission-banner button {
+    flex-shrink: 0;
+    border: none;
+    background: var(--warn);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .add-box {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 22px;
+  }
+
+  .add-box input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .add-box .row2 { display: flex; gap: 8px; }
+
+  .add-box input[type="datetime-local"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .add-box input:focus { outline: none; border-color: var(--accent); }
+
+  .add-box button {
+    padding: 0 18px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .add-box button:active { opacity: 0.85; }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .list-header button {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-family: inherit;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  ul.tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+  li.task {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  li.task.overdue { border-color: var(--danger); }
+
+  .task-top { display: flex; align-items: flex-start; gap: 10px; }
+
+  .task-num {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-width: 18px;
+    padding-top: 2px;
+  }
+
+  .task-text { flex: 1; font-size: 1rem; line-height: 1.4; word-break: break-word; }
+
+  .task-text input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--accent-light);
+    margin-bottom: 6px;
+  }
+
+  .edit-time {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--accent-light);
+  }
+
+  .task-schedule {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .task-schedule.overdue-text { color: var(--danger); font-weight: 600; }
+
+  .task-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .task-actions button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    padding: 6px 8px;
+    border-radius: 4px;
+  }
+
+  .btn-edit { color: var(--accent); }
+  .btn-edit:hover { background: var(--accent-light); }
+  .btn-delete { color: var(--danger); }
+  .btn-delete:hover { background: #f6e6e5; }
+  .btn-save { color: #fff; background: var(--accent) !important; }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.9rem;
+    padding: 40px 10px;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+  }
+
+  .status {
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>To-Do List Manager</h1>
+    <p>Your tasks are saved on the server and stay until you edit or delete them.</p>
+  </header>
+
+  <div class="permission-banner" id="permBanner" style="display:none;">
+    <span>Turn on notifications so you get alerted when a task is due.</span>
+    <button id="enableNotifBtn">Enable</button>
+  </div>
+
+  <div class="add-box">
+    <input type="text" id="newTaskInput" placeholder="Add a new task..." autocomplete="off">
+    <div class="row2">
+      <input type="datetime-local" id="newTaskTime">
+      <button id="addBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="list-header">
+    <span id="taskCount">0 tasks</span>
+    <button id="clearAllBtn">Clear all</button>
+  </div>
+
+  <ul class="tasks" id="taskList"></ul>
+  <div class="empty" id="emptyState" style="display:none;">No tasks yet. Add your first one above.</div>
+
+  <div class="status" id="statusLine">Ready.</div>
+</div>
+
+<script>
+  let tasks = []; // { id, text, dueAt: ISO string or null, notified: bool }
+  let editingIndex = null;
+
+  const taskList = document.getElementById('taskList');
+  const emptyState = document.getElementById('emptyState');
+  const taskCount = document.getElementById('taskCount');
+  const statusLine = document.getElementById('statusLine');
+  const newTaskInput = document.getElementById('newTaskInput');
+  const newTaskTime = document.getElementById('newTaskTime');
+  const permBanner = document.getElementById('permBanner');
+
+  // ---- Push notification subscription ----
+  // Tasks are checked server-side every minute, so notifications arrive
+  // even if this tab/app is closed — as long as you've subscribed once.
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  }
+
+  async function subscribeToPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Push notifications are not supported in this browser.');
+      return false;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const keyRes = await fetch('/api/vapid-public-key');
+      const { publicKey } = await keyRes.json();
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+    }
+    await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub),
+    });
+    return true;
+  }
+
+  function checkNotificationPermission() {
+    if (!('Notification' in window)) return;
+    permBanner.style.display = Notification.permission === 'default' ? 'flex' : 'none';
+  }
+
+  document.getElementById('enableNotifBtn').addEventListener('click', async () => {
+    if (!('Notification' in window)) {
+      alert('This browser does not support notifications.');
+      return;
+    }
+    const result = await Notification.requestPermission();
+    checkNotificationPermission();
+    if (result === 'granted') {
+      try {
+        await subscribeToPush();
+        statusLine.textContent = 'Notifications enabled — you will be alerted even if the app is closed.';
+      } catch (e) {
+        statusLine.textContent = 'Could not subscribe to notifications. Please try again.';
+      }
+    }
+  });
+
+  // ---- Storage (server-backed, so scheduled checks work even when closed) ----
+  async function loadTasks() {
+    try {
+      const res = await fetch('/api/tasks');
+      tasks = await res.json();
+      statusLine.textContent = 'Synced with server.';
+    } catch (e) {
+      statusLine.textContent = 'Could not reach the server. Is it running?';
+      tasks = [];
+    }
+    render();
+  }
+
+  async function createTaskOnServer(text, dueAt) {
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, dueAt }),
+    });
+    return res.json();
+  }
+
+  async function updateTaskOnServer(id, text, dueAt) {
+    const res = await fetch('/api/tasks/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, dueAt }),
+    });
+    return res.json();
+  }
+
+  async function deleteTaskOnServer(id) {
+    await fetch('/api/tasks/' + id, { method: 'DELETE' });
+  }
+
+  async function clearAllOnServer() {
+    await fetch('/api/tasks', { method: 'DELETE' });
+  }
+
+  // ---- Formatting helpers ----
+  function formatDue(dueAt) {
+    if (!dueAt) return null;
+    const due = new Date(dueAt);
+    const now = new Date();
+    const diffMs = due - now;
+    const dateLabel = due.toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+
+    if (diffMs <= 0) return { text: `Due ${dateLabel} — overdue`, overdue: true };
+
+    const mins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    let countdown;
+    if (days > 0) countdown = `in ${days}d ${hours % 24}h`;
+    else if (hours > 0) countdown = `in ${hours}h ${mins % 60}m`;
+    else countdown = `in ${mins}m`;
+
+    return { text: `Due ${dateLabel} — ${countdown}`, overdue: false };
+  }
+
+  function renderTimeLabelsOnly() {
+    document.querySelectorAll('.task-schedule[data-index]').forEach(el => {
+      const i = parseInt(el.getAttribute('data-index'), 10);
+      const task = tasks[i];
+      if (!task || !task.dueAt) return;
+      const info = formatDue(task.dueAt);
+      el.textContent = info.text;
+      el.classList.toggle('overdue-text', info.overdue);
+      const li = el.closest('li.task');
+      if (li) li.classList.toggle('overdue', info.overdue);
+    });
+  }
+
+  // ---- Rendering ----
+  function render() {
+    taskList.innerHTML = '';
+    taskCount.textContent = tasks.length + (tasks.length === 1 ? ' task' : ' tasks');
+    emptyState.style.display = tasks.length === 0 ? 'block' : 'none';
+
+    tasks.forEach((task, i) => {
+      const li = document.createElement('li');
+      li.className = 'task';
+
+      const top = document.createElement('div');
+      top.className = 'task-top';
+
+      const num = document.createElement('span');
+      num.className = 'task-num';
+      num.textContent = (i + 1) + '.';
+      top.appendChild(num);
+
+      const textWrap = document.createElement('div');
+      textWrap.className = 'task-text';
+
+      if (editingIndex === i) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = task.text;
+        input.id = 'editInput';
+        textWrap.appendChild(input);
+
+        const timeInput = document.createElement('input');
+        timeInput.type = 'datetime-local';
+        timeInput.className = 'edit-time';
+        timeInput.id = 'editTimeInput';
+        if (task.dueAt) timeInput.value = toLocalInputValue(new Date(task.dueAt));
+        textWrap.appendChild(timeInput);
+      } else {
+        const label = document.createElement('div');
+        label.textContent = task.text;
+        textWrap.appendChild(label);
+
+        if (task.dueAt) {
+          const info = formatDue(task.dueAt);
+          const sched = document.createElement('div');
+          sched.className = 'task-schedule' + (info.overdue ? ' overdue-text' : '');
+          sched.setAttribute('data-index', i);
+          sched.textContent = info.text;
+          textWrap.appendChild(sched);
+          if (info.overdue) li.classList.add('overdue');
+        }
+      }
+      top.appendChild(textWrap);
+
+      const actions = document.createElement('div');
+      actions.className = 'task-actions';
+
+      if (editingIndex === i) {
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn-save';
+        saveBtn.textContent = 'Save';
+        saveBtn.onclick = () => saveEdit(i);
+        actions.appendChild(saveBtn);
+      } else {
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit';
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = () => { editingIndex = i; render(); };
+        actions.appendChild(editBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-delete';
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => deleteTask(i);
+        actions.appendChild(delBtn);
+      }
+
+      top.appendChild(actions);
+      li.appendChild(top);
+      taskList.appendChild(li);
+    });
+
+    if (editingIndex !== null) {
+      const editInput = document.getElementById('editInput');
+      if (editInput) {
+        editInput.focus();
+        editInput.setSelectionRange(editInput.value.length, editInput.value.length);
+        editInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') saveEdit(editingIndex);
+        });
+      }
+    }
+  }
+
+  function toLocalInputValue(date) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  // ---- Actions ----
+  async function addTask() {
+    const value = newTaskInput.value.trim();
+    if (!value) return;
+    const dueAt = newTaskTime.value ? new Date(newTaskTime.value).toISOString() : null;
+    newTaskInput.value = '';
+    newTaskTime.value = '';
+    await createTaskOnServer(value, dueAt);
+    await loadTasks();
+  }
+
+  async function saveEdit(i) {
+    const editInput = document.getElementById('editInput');
+    const editTimeInput = document.getElementById('editTimeInput');
+    const value = editInput.value.trim();
+    const newDueAt = editTimeInput.value ? new Date(editTimeInput.value).toISOString() : null;
+    const task = tasks[i];
+    editingIndex = null;
+    await updateTaskOnServer(task.id, value || task.text, newDueAt);
+    await loadTasks();
+  }
+
+  async function deleteTask(i) {
+    await deleteTaskOnServer(tasks[i].id);
+    await loadTasks();
+  }
+
+  async function clearAll() {
+    if (tasks.length === 0) return;
+    if (confirm('Are you sure you want to delete all tasks?')) {
+      await clearAllOnServer();
+      await loadTasks();
+    }
+  }
+
+  document.getElementById('addBtn').addEventListener('click', addTask);
+  document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+  newTaskInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  // Register service worker (enables "Add to Home Screen" install + push notifications)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+
+  checkNotificationPermission();
+  loadTasks();
+  // Re-sync and refresh countdown labels periodically while the app is open.
+  setInterval(loadTasks, 20000);
+</script>
+</body>
+</html>
