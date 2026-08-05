@@ -47,6 +47,7 @@ function normalizeTask(t) {
     dueAt: t.dueAt || null,
     completed: !!t.completed,
     notified: !!t.notified,
+    deletedAt: t.deletedAt || null,
     subtasks: Array.isArray(t.subtasks) ? t.subtasks.map(normalizeSubtask) : [],
   };
 }
@@ -114,8 +115,14 @@ app.post('/api/subscribe', (req, res) => {
 });
 
 // ---- API: tasks ----
+// Only active (non-deleted) tasks show up in the normal list.
 app.get('/api/tasks', (req, res) => {
-  res.json(data.tasks);
+  res.json(data.tasks.filter(t => !t.deletedAt));
+});
+
+// Soft-deleted tasks live here until restored or permanently deleted.
+app.get('/api/tasks/trash', (req, res) => {
+  res.json(data.tasks.filter(t => !!t.deletedAt));
 });
 
 app.post('/api/tasks', (req, res) => {
@@ -129,6 +136,7 @@ app.post('/api/tasks', (req, res) => {
     dueAt: dueAt || null,
     completed: false,
     notified: false,
+    deletedAt: null,
     subtasks: [],
   };
   data.tasks.push(task);
@@ -151,14 +159,45 @@ app.put('/api/tasks/:id', (req, res) => {
   res.json(task);
 });
 
+// Soft delete: moves the task to trash instead of erasing it.
 app.delete('/api/tasks/:id', (req, res) => {
+  const task = findTask(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  task.deletedAt = new Date().toISOString();
+  saveData(data);
+  res.json(task);
+});
+
+// Bring a trashed task back to the active list.
+app.post('/api/tasks/:id/restore', (req, res) => {
+  const task = findTask(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  task.deletedAt = null;
+  saveData(data);
+  res.json(task);
+});
+
+// Hard delete: permanently erases a trashed task. Requires the caller to
+// type the task's exact name as confirmText, so it can't happen by accident.
+app.delete('/api/tasks/:id/permanent', (req, res) => {
+  const task = findTask(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  const confirmText = (req.body && req.body.confirmText || '').trim();
+  if (confirmText !== task.text) {
+    return res.status(400).json({ error: 'Task name does not match' });
+  }
   data.tasks = data.tasks.filter(t => t.id !== req.params.id);
   saveData(data);
   res.status(204).end();
 });
 
+// "Clear all" soft-deletes every active task so it can still be restored
+// from the trash afterwards.
 app.delete('/api/tasks', (req, res) => {
-  data.tasks = [];
+  const now = new Date().toISOString();
+  data.tasks.forEach(t => {
+    if (!t.deletedAt) t.deletedAt = now;
+  });
   saveData(data);
   res.status(204).end();
 });
@@ -235,6 +274,7 @@ cron.schedule('* * * * *', async () => {
   const now = Date.now();
   let changed = false;
   for (const task of data.tasks) {
+    if (task.deletedAt) continue;
     if (!task.completed && task.dueAt && !task.notified && new Date(task.dueAt).getTime() <= now) {
       await sendPushToAll({ title: 'Task due now', body: task.text });
       task.notified = true;

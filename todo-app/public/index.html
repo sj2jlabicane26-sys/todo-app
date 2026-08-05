@@ -33,7 +33,11 @@
     padding: 24px 16px 60px;
   }
 
-  .app { width: 100%; max-width: 480px; }
+  .app { width: 100%; max-width: 480px; min-width: 0; overflow-x: hidden; }
+
+  @media (max-width: 360px) {
+    body { padding-left: 10px; padding-right: 10px; }
+  }
 
   header {
     text-align: left;
@@ -163,6 +167,8 @@
     margin-bottom: 10px;
   }
 
+  .list-header-actions { display: flex; gap: 14px; align-items: baseline; }
+
   .list-header button {
     background: none;
     border: none;
@@ -173,6 +179,115 @@
     letter-spacing: 0.08em;
     cursor: pointer;
     padding: 0;
+  }
+
+  .list-header button.btn-hide-completed { color: var(--accent); }
+
+  /* ---- Motivational toast ---- */
+  .motivation-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.88rem;
+    padding: 12px 18px;
+    border-radius: 8px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 50;
+  }
+
+  .motivation-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ---- Trash view ---- */
+  .trash-hint {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  li.trash-task {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+
+  .trash-task-text { font-size: 1rem; line-height: 1.4; word-break: break-word; }
+  .trash-task-meta {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .trash-task-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+  .trash-task-actions button {
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 5px;
+    padding: 6px 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+
+  .btn-restore { color: var(--accent) !important; border-color: var(--accent) !important; }
+  .btn-hard-delete { color: var(--danger) !important; border-color: var(--danger) !important; }
+
+  .hard-delete-confirm {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .hard-delete-confirm p {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    color: var(--danger);
+    margin: 0 0 8px;
+  }
+
+  .hard-delete-confirm .row2 { display: flex; gap: 6px; }
+
+  .hard-delete-confirm input[type="text"] {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--danger);
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .hard-delete-confirm button.btn-confirm-hard {
+    border: none;
+    background: var(--danger);
+    color: #fff;
+    border-radius: 5px;
+    padding: 0 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+
+  .hard-delete-confirm button.btn-confirm-hard:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   ul.tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -473,8 +588,8 @@
   /* ---- Month view ---- */
   .weekday-labels {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
     margin-bottom: 6px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 0.68rem;
@@ -485,26 +600,30 @@
 
   .month-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
     margin-bottom: 16px;
   }
 
   .month-cell {
     aspect-ratio: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     border-radius: 6px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 0.82rem;
+    font-size: clamp(0.65rem, 3.2vw, 0.82rem);
     cursor: pointer;
     position: relative;
     background: var(--card);
     border: 1px solid var(--line);
     color: var(--ink);
+    overflow: hidden;
   }
+
+  .month-cell span { white-space: nowrap; }
 
   .month-cell.empty { border: none; background: none; cursor: default; }
   .month-cell.today { border-color: var(--accent); font-weight: 700; }
@@ -563,12 +682,16 @@
     <button id="tabList" class="active">List</button>
     <button id="tabWeek">Week</button>
     <button id="tabMonth">Month</button>
+    <button id="tabTrash">Trash</button>
   </div>
 
   <div id="listView">
     <div class="list-header">
       <span id="taskCount">0 tasks</span>
-      <button id="clearAllBtn">Clear all</button>
+      <div class="list-header-actions">
+        <button id="hideCompletedBtn" class="btn-hide-completed">Hide completed</button>
+        <button id="clearAllBtn">Clear all</button>
+      </div>
     </div>
     <ul class="tasks" id="taskList"></ul>
     <div class="empty" id="emptyState" style="display:none;">No tasks yet. Add your first one above.</div>
@@ -590,7 +713,7 @@
       <button id="monthNext">&#8250;</button>
     </div>
     <div class="weekday-labels">
-      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+      <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
     </div>
     <div class="month-grid" id="monthGrid"></div>
     <div class="selected-day-panel">
@@ -599,20 +722,42 @@
     </div>
   </div>
 
+  <div id="trashView" style="display:none;">
+    <div class="trash-hint">Deleted tasks stay here until you restore them or delete them forever.</div>
+    <ul class="tasks" id="trashList" style="list-style:none; margin:0; padding:0;"></ul>
+    <div class="empty" id="trashEmptyState" style="display:none;">Trash is empty.</div>
+  </div>
+
   <div class="status" id="statusLine">Ready.</div>
 </div>
 
+<div class="motivation-toast" id="motivationToast"></div>
+
 <script>
-  // task shape: { id, text, dueAt: ISO string or null, completed, subtasks: [{id, text, dueAt, completed}] }
+  // task shape: { id, text, dueAt: ISO string or null, completed, deletedAt, subtasks: [{id, text, dueAt, completed}] }
   let tasks = [];
+  let trashTasks = [];
   let editingIndex = null;         // index of main task being text/time-edited
   let editingSub = null;           // { taskId, subId } of subtask being text/time-edited
   let addingSubtaskFor = null;     // taskId currently showing the "add subtask" inline form
+  let hideCompleted = localStorage.getItem('hideCompleted') === '1';
+  let hardDeleteConfirmFor = null; // task id currently showing the "type the name" confirm box
 
-  let view = 'list';               // 'list' | 'week' | 'month'
+  let view = 'list';               // 'list' | 'week' | 'month' | 'trash'
   let weekOffset = 0;              // weeks from the current week
   let monthCursor = startOfMonth(new Date());
   let selectedDayKey = toDateKey(new Date());
+
+  const MOTIVATIONAL_LINES = [
+    'Ayos! Isa pang hakbang palapit sa goal mo.',
+    'Galing! Konti na lang, kaya mo yan.',
+    'Nice, dagdag task, dagdag laban.',
+    'Push mo yan! Isa-isahin lang natin.',
+    'Sige, sulong! Bawat task, progress yan.',
+    'Ito na, listahan ng magiging tagumpay mo.',
+    'Steady lang, kaya mo talaga to.',
+    'Bagong task, bagong tsansang mag-shine.',
+  ];
 
   const taskList = document.getElementById('taskList');
   const emptyState = document.getElementById('emptyState');
@@ -625,6 +770,19 @@
   const listViewEl = document.getElementById('listView');
   const weekViewEl = document.getElementById('weekView');
   const monthViewEl = document.getElementById('monthView');
+  const trashViewEl = document.getElementById('trashView');
+  const trashList = document.getElementById('trashList');
+  const trashEmptyState = document.getElementById('trashEmptyState');
+  const motivationToast = document.getElementById('motivationToast');
+  const hideCompletedBtn = document.getElementById('hideCompletedBtn');
+
+  function showMotivation() {
+    const line = MOTIVATIONAL_LINES[Math.floor(Math.random() * MOTIVATIONAL_LINES.length)];
+    motivationToast.textContent = line;
+    motivationToast.classList.add('show');
+    clearTimeout(showMotivation._t);
+    showMotivation._t = setTimeout(() => motivationToast.classList.remove('show'), 2200);
+  }
 
   // ---- Push notification subscription ----
   // Tasks/subtasks are checked server-side every minute, so notifications
@@ -720,6 +878,30 @@
     await fetch('/api/tasks', { method: 'DELETE' });
   }
 
+  async function loadTrash() {
+    try {
+      const res = await fetch('/api/tasks/trash');
+      trashTasks = await res.json();
+    } catch (e) {
+      trashTasks = [];
+    }
+    if (view === 'trash') renderTrash();
+  }
+
+  async function restoreTaskOnServer(id) {
+    const res = await fetch('/api/tasks/' + id + '/restore', { method: 'POST' });
+    return res.json();
+  }
+
+  async function hardDeleteTaskOnServer(id, confirmText) {
+    const res = await fetch('/api/tasks/' + id + '/permanent', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmText }),
+    });
+    return res;
+  }
+
   async function createSubtaskOnServer(taskId, text, dueAt) {
     const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
       method: 'POST',
@@ -790,28 +972,47 @@
     document.getElementById('tabList').classList.toggle('active', view === 'list');
     document.getElementById('tabWeek').classList.toggle('active', view === 'week');
     document.getElementById('tabMonth').classList.toggle('active', view === 'month');
+    document.getElementById('tabTrash').classList.toggle('active', view === 'trash');
     listViewEl.style.display = view === 'list' ? 'block' : 'none';
     weekViewEl.style.display = view === 'week' ? 'block' : 'none';
     monthViewEl.style.display = view === 'month' ? 'block' : 'none';
+    trashViewEl.style.display = view === 'trash' ? 'block' : 'none';
 
     if (view === 'list') renderList();
     else if (view === 'week') renderWeek();
-    else renderMonth();
+    else if (view === 'month') renderMonth();
+    else renderTrash();
   }
 
   document.getElementById('tabList').addEventListener('click', () => { view = 'list'; render(); });
   document.getElementById('tabWeek').addEventListener('click', () => { view = 'week'; render(); });
   document.getElementById('tabMonth').addEventListener('click', () => { view = 'month'; render(); });
+  document.getElementById('tabTrash').addEventListener('click', () => { view = 'trash'; hardDeleteConfirmFor = null; loadTrash(); render(); });
+
+  hideCompletedBtn.textContent = hideCompleted ? 'Show completed' : 'Hide completed';
+  hideCompletedBtn.addEventListener('click', () => {
+    hideCompleted = !hideCompleted;
+    localStorage.setItem('hideCompleted', hideCompleted ? '1' : '0');
+    hideCompletedBtn.textContent = hideCompleted ? 'Show completed' : 'Hide completed';
+    render();
+  });
 
   // ==========================================================
   // LIST VIEW
   // ==========================================================
   function renderList() {
     taskList.innerHTML = '';
-    taskCount.textContent = tasks.length + (tasks.length === 1 ? ' task' : ' tasks');
-    emptyState.style.display = tasks.length === 0 ? 'block' : 'none';
+    const visibleTasks = hideCompleted ? tasks.filter(t => !t.completed) : tasks;
+    const hiddenCount = tasks.length - visibleTasks.length;
+    taskCount.textContent = tasks.length + (tasks.length === 1 ? ' task' : ' tasks') +
+      (hiddenCount > 0 ? ` (${hiddenCount} completed hidden)` : '');
+    emptyState.style.display = visibleTasks.length === 0 ? 'block' : 'none';
+    emptyState.textContent = tasks.length === 0
+      ? 'No tasks yet. Add your first one above.'
+      : 'Walang task na ipapakita — naka-hide ang mga tapos na.';
 
-    tasks.forEach((task, i) => {
+    visibleTasks.forEach((task) => {
+      const i = tasks.indexOf(task);
       const li = document.createElement('li');
       li.className = 'task' + (task.completed ? ' completed' : '');
 
@@ -1038,6 +1239,99 @@
     return wrap;
   }
 
+  // ==========================================================
+  // TRASH VIEW
+  // ==========================================================
+  function renderTrash() {
+    trashList.innerHTML = '';
+    trashEmptyState.style.display = trashTasks.length === 0 ? 'block' : 'none';
+
+    trashTasks.forEach(task => {
+      const li = document.createElement('li');
+      li.className = 'trash-task';
+
+      const text = document.createElement('div');
+      text.className = 'trash-task-text';
+      text.textContent = task.text;
+      li.appendChild(text);
+
+      const meta = document.createElement('div');
+      meta.className = 'trash-task-meta';
+      meta.textContent = 'Deleted ' + new Date(task.deletedAt).toLocaleString(undefined, {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+      li.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'trash-task-actions';
+
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'btn-restore';
+      restoreBtn.textContent = 'Restore';
+      restoreBtn.onclick = () => restoreTask(task.id);
+      actions.appendChild(restoreBtn);
+
+      const hardDelBtn = document.createElement('button');
+      hardDelBtn.className = 'btn-hard-delete';
+      hardDelBtn.textContent = 'Delete forever';
+      hardDelBtn.onclick = () => {
+        hardDeleteConfirmFor = hardDeleteConfirmFor === task.id ? null : task.id;
+        renderTrash();
+      };
+      actions.appendChild(hardDelBtn);
+
+      li.appendChild(actions);
+
+      if (hardDeleteConfirmFor === task.id) {
+        const confirmBox = document.createElement('div');
+        confirmBox.className = 'hard-delete-confirm';
+
+        const warn = document.createElement('p');
+        warn.textContent = `I-type ang "${task.text}" para permanenteng mabura ito. Hindi na ito mababawi.`;
+        confirmBox.appendChild(warn);
+
+        const row2 = document.createElement('div');
+        row2.className = 'row2';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'hardDeleteInput_' + task.id;
+        input.placeholder = 'I-type ang pangalan ng task';
+        input.autocomplete = 'off';
+        row2.appendChild(input);
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn-confirm-hard';
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.disabled = true;
+        confirmBtn.onclick = () => hardDeleteTask(task.id);
+        row2.appendChild(confirmBtn);
+
+        confirmBox.appendChild(row2);
+
+        const errBox = document.createElement('div');
+        errBox.id = 'hardDeleteError_' + task.id;
+        errBox.style.color = 'var(--danger)';
+        errBox.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        errBox.style.fontSize = '0.75rem';
+        errBox.style.marginTop = '6px';
+        confirmBox.appendChild(errBox);
+
+        li.appendChild(confirmBox);
+
+        input.addEventListener('input', () => {
+          confirmBtn.disabled = input.value.trim() !== task.text;
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && input.value.trim() === task.text) hardDeleteTask(task.id);
+        });
+        setTimeout(() => input.focus(), 0);
+      }
+
+      trashList.appendChild(li);
+    });
+  }
+
   // ---- List view actions ----
   async function addTask() {
     const value = newTaskInput.value.trim();
@@ -1047,6 +1341,7 @@
     newTaskTime.value = '';
     await createTaskOnServer(value, dueAt);
     await loadTasks();
+    showMotivation();
   }
 
   async function saveEdit(i) {
@@ -1068,14 +1363,35 @@
   async function deleteTask(id) {
     await deleteTaskOnServer(id);
     await loadTasks();
+    await loadTrash();
   }
 
   async function clearAll() {
     if (tasks.length === 0) return;
-    if (confirm('Are you sure you want to delete all tasks?')) {
+    if (confirm('Move all tasks to trash? You can restore them later from the Trash tab.')) {
       await clearAllOnServer();
       await loadTasks();
+      await loadTrash();
     }
+  }
+
+  async function restoreTask(id) {
+    await restoreTaskOnServer(id);
+    await loadTrash();
+    await loadTasks();
+  }
+
+  async function hardDeleteTask(id) {
+    const input = document.getElementById('hardDeleteInput_' + id);
+    const confirmText = input ? input.value.trim() : '';
+    const res = await hardDeleteTaskOnServer(id, confirmText);
+    if (res.status === 400) {
+      const errBox = document.getElementById('hardDeleteError_' + id);
+      if (errBox) errBox.textContent = 'Hindi tugma ang na-type mo sa pangalan ng task. Subukan ulit.';
+      return;
+    }
+    hardDeleteConfirmFor = null;
+    await loadTrash();
   }
 
   async function addSubtask(task, text, timeValue) {
@@ -1236,7 +1552,9 @@
 
     const year = monthCursor.getFullYear();
     const month = monthCursor.getMonth();
-    const firstWeekday = new Date(year, month, 1).getDay();
+    // getDay() is Sunday-based (0=Sun..6=Sat); shift so Monday=0..Sunday=6,
+    // matching the Mon–Sun column order of the weekday labels above.
+    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayKey = toDateKey(new Date());
 
@@ -1308,6 +1626,7 @@
 
   checkNotificationPermission();
   loadTasks();
+  loadTrash();
   // Re-sync and refresh countdown labels periodically while the app is open.
   setInterval(loadTasks, 20000);
 </script>
