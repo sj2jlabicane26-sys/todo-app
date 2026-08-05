@@ -249,24 +249,40 @@ app.delete('/api/tasks/:id/subtasks/:subId', (req, res) => {
 });
 
 // ---- Notification sending ----
+// Returns true if the push was actually delivered to at least one
+// subscription (or if there were no subscriptions to begin with — in
+// that case there's nothing to retry). Returns false if every attempt
+// failed, so the caller can leave the task/subtask un-notified and
+// retry it on the next tick instead of silently losing it forever.
 async function sendPushToAll(payload) {
+  if (data.subscriptions.length === 0) {
+    console.warn(`[push] No subscriptions registered yet — nothing to send "${payload.title}: ${payload.body}" to. Open the app and tap "Enable" on the notification banner first.`);
+    return true;
+  }
+
   const stillValid = [];
+  let sentCount = 0;
   for (const sub of data.subscriptions) {
     try {
       await webpush.sendNotification(sub, JSON.stringify(payload));
       stillValid.push(sub);
+      sentCount++;
     } catch (err) {
-      // 410/404 = subscription expired or the user uninstalled/unsubscribed.
+      // 410/404 = subscription expired or the user uninstalled/unsubscribed —
+      // safe to drop, retrying it would never succeed.
       if (err.statusCode !== 410 && err.statusCode !== 404) {
         stillValid.push(sub);
       }
-      console.warn('Push failed for a subscription, dropping it:', err.statusCode || err.message);
+      console.warn(
+        `[push] Failed to deliver "${payload.title}" (status ${err.statusCode || 'n/a'}): ${err.body || err.message}`
+      );
     }
   }
   if (stillValid.length !== data.subscriptions.length) {
     data.subscriptions = stillValid;
     saveData(data);
   }
+  return sentCount > 0;
 }
 
 // Check every minute for tasks (and subtasks) that just became due.
@@ -276,15 +292,21 @@ cron.schedule('* * * * *', async () => {
   for (const task of data.tasks) {
     if (task.deletedAt) continue;
     if (!task.completed && task.dueAt && !task.notified && new Date(task.dueAt).getTime() <= now) {
-      await sendPushToAll({ title: 'Task due now', body: task.text });
-      task.notified = true;
-      changed = true;
+      const delivered = await sendPushToAll({ title: 'Task due now', body: task.text });
+      if (delivered) {
+        task.notified = true;
+        changed = true;
+      }
+      // if delivery failed for every subscription, leave notified=false so
+      // it gets retried on the next minute's tick instead of being lost.
     }
     for (const sub of task.subtasks) {
       if (!sub.completed && sub.dueAt && !sub.notified && new Date(sub.dueAt).getTime() <= now) {
-        await sendPushToAll({ title: 'Subtask due now', body: `${task.text} — ${sub.text}` });
-        sub.notified = true;
-        changed = true;
+        const delivered = await sendPushToAll({ title: 'Subtask due now', body: `${task.text} — ${sub.text}` });
+        if (delivered) {
+          sub.notified = true;
+          changed = true;
+        }
       }
     }
   }

@@ -51,28 +51,44 @@ the notification, instead of relying on a timer running in the browser.
 ## Using it on your phone
 
 Push notifications require the site to be served over `https://` (or
-`localhost` for local testing), so to actually use this from your phone
-you need to put the server online. A few good free/cheap options:
+`localhost` for local testing), and the server needs to stay running
+24/7 for the once-a-minute due-task check to actually fire — so to get
+notifications reliably on your phone, you need to put the server
+online instead of running it on your own laptop.
 
-- **Render** (render.com) — free tier, connect a GitHub repo, it runs
-  `npm install && npm start` automatically. Add your VAPID keys as
-  environment variables in Render's dashboard (instead of `.env`).
-- **Railway** (railway.app) — similar, also has a free trial tier.
-- **A cheap VPS** (e.g. DigitalOcean) if you want more control.
+### Deploying to Railway
 
-Steps once it's hosted:
 1. Push this project to a GitHub repo (skip `node_modules` and `.env` —
-   there's a `.gitignore` for that already).
-2. Connect the repo on Render/Railway, set `VAPID_PUBLIC_KEY` and
-   `VAPID_PRIVATE_KEY` as environment variables there.
-3. Open the resulting `https://...` URL on your phone.
-4. Add it to your home screen (Android Chrome: menu → "Add to Home
-   screen"; iPhone Safari: Share icon → "Add to Home Screen").
-5. Open the app from the home screen icon, tap **Enable**, allow
-   notifications.
-6. Add a task with a due time — you'll get a notification at that time
-   even if you've fully closed the app, as long as your phone has a
-   network connection.
+   there's a `.gitignore` for that already). Make sure `server.js` and
+   `package.json` sit at the **root** of the repo, not inside a
+   subfolder — otherwise Railway won't find them without you manually
+   setting a custom "Root Directory" in its settings.
+2. On [railway.app](https://railway.app), sign in with GitHub, click
+   **New Project → Deploy from GitHub repo**, and pick this repo.
+3. In the project's **Variables** tab, add `VAPID_PUBLIC_KEY` and
+   `VAPID_PRIVATE_KEY` (copy the values from your local `.env` file —
+   don't upload the `.env` file itself). You don't need to set `PORT`;
+   Railway provides its own.
+4. Wait for the deploy to finish (check the **Deployments** tab). You'll
+   get a public URL like `https://your-app.up.railway.app`.
+5. Open that URL on your phone's browser, add it to your home screen
+   (Android Chrome: menu → "Add to Home screen"; iPhone Safari: Share
+   icon → "Add to Home Screen").
+6. Open the app from the home screen icon, tap **Enable**, and allow
+   notifications when prompted.
+7. Add a task with a due time a couple of minutes out, then lock your
+   phone — you should get a notification even with the app fully
+   closed, as long as your phone has a network connection.
+
+**Important:** a push subscription is tied to the exact URL you enabled
+notifications on. If you ever redeploy to a different URL (new Railway
+project, custom domain, switching hosts, etc.), you must open the app
+on the new URL and tap **Enable** again — old subscriptions from a
+previous URL won't carry over.
+
+You can check `Deployments → Logs` in Railway at any time to see
+`[push]` log lines confirming whether a notification was actually
+delivered, or why it failed.
 
 ## Notes and limits
 

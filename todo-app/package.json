@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "To-do list manager with scheduled push notifications",
   "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js",
     "vapid-keys": "web-push generate-vapid-keys"
