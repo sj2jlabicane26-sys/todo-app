@@ -24,7 +24,16 @@
 
   body {
     margin: 0;
-    background: var(--paper);
+    background: linear-gradient(
+    -45deg,
+    #ffd6e7,
+    #e8d8ff,
+    #dff7ff,
+    #fff3d9
+);
+
+background-size: 400% 400%;
+animation: gradientMove 12s ease infinite;
     color: var(--ink);
     font-family: 'Georgia', 'Times New Roman', serif;
     min-height: 100vh;
@@ -81,12 +90,18 @@
   }
 
   .add-box {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    background: rgba(255,255,255,0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 18px;
+
     padding: 14px;
     margin-bottom: 18px;
-  }
+
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
 
   .add-box input[type="text"] {
     width: 100%;
@@ -115,17 +130,19 @@
 
   .add-box input:focus { outline: none; border-color: var(--accent); }
 
-  .add-box button, .add-subtask-row button {
+  .add-box button,
+.add-subtask-row button {
     padding: 0 18px;
     border: none;
-    border-radius: 6px;
-    background: var(--accent);
-    color: #fff;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #7b6cff, #a78bfa);
+    color: white;
     font-size: 0.95rem;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 600;
     cursor: pointer;
-  }
+    transition: all .3s ease;
+}
 
   .add-box button:active, .add-subtask-row button:active { opacity: 0.85; }
 
@@ -292,12 +309,20 @@
 
   ul.tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 
-  li.task {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 6px;
+ li.task {
+    background: rgba(255,255,255,0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 16px;
+
     padding: 12px 14px;
-  }
+
+    box-shadow: 0 8px 20px rgba(0,0,0,.12);
+
+    transition: all .3s ease;
+}
 
   li.task.overdue { border-color: var(--danger); }
   li.task.completed { opacity: 0.7; }
@@ -658,14 +683,134 @@
 
 
   }
+  @keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+    
+}
+
+li.task:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,.18);
+}
+
+.add-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(0,0,0,.15);
+    transition: .3s;
+}
+.add-box button:hover,
+.add-subtask-row button:hover,
+.task-actions button:hover,
+.view-tabs button:hover {
+    transform: scale(1.05);
+    filter: brightness(1.08);
+}
+
+.add-box button:active,
+.add-subtask-row button:active,
+.task-actions button:active {
+    transform: scale(.95);
+}
+.progress-container{
+    width:100%;
+    height:10px;
+    background:#ddd;
+    border-radius:20px;
+    overflow:hidden;
+    margin:12px 0;
+}
+
+.progress-bar{
+    width:0%;
+    height:100%;
+    background:linear-gradient(90deg,#7b6cff,#c084fc);
+    transition:width .4s ease;
+}
+
+#progressText{
+    text-align:center;
+    font-size:.85rem;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    margin:5px 0;
+    color:#555;
+}
+
+body.dark-mode {
+  --ink: #e1e2f3;
+  --paper: #1e1e2e;
+  --card: #2a2a3c;
+  --accent: #8b80f9;
+  --accent-light: #32324d;
+  --line: #45475a;
+  --danger: #f38ba8;
+  --muted: #a6adc8;
+  --warn: #f9e2af;
+  --warn-light: #313244;
+}
+
+body.dark-mode {
+  background: linear-gradient(-45deg, #11111b, #181825, #1e1e2e, #11111b) !important;
+  color: var(--ink);
+}
+
+body.dark-mode .add-box,
+body.dark-mode li.task {
+  background: rgba(30, 30, 46, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode input[type="datetime-local"] {
+  background: #181825 !important;
+  color: #cdd6f4 !important;
+  border-color: #45475a !important;
+}
+
+.theme-toggle-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1.2rem;
+  padding: 8px 12px;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.theme-toggle-btn:hover {
+  transform: scale(1.1);
+}
 </style>
 </head>
 <body>
+  <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle Dark Mode">🌙</button>
 <div class="app">
   <header>
     <h1>Aki's To-Do List</h1>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <p id="progressText">0% Completed</p>
+
     <p>Made with love, especially for you.</p>
-  </header>
+</header>
 
   <div class="permission-banner" id="permBanner" style="display:none;">
     <span>Turn on notifications so you get alerted when a task is due.</span>
@@ -684,7 +829,7 @@
     <button id="tabList" class="active">List</button>
     <button id="tabWeek">Week</button>
     <button id="tabMonth">Month</button>
-    <button id="tabTrash">Trash</button>
+    <button id="tabTrash">🗑️</button>
   </div>
 
   <div id="listView">
@@ -984,6 +1129,8 @@
     else if (view === 'week') renderWeek();
     else if (view === 'month') renderMonth();
     else renderTrash();
+
+    updateProgress();
   }
 
   document.getElementById('tabList').addEventListener('click', () => { view = 'list'; render(); });
@@ -1004,10 +1151,12 @@
   // ==========================================================
   function renderList() {
     taskList.innerHTML = '';
-    const visibleTasks = hideCompleted ? tasks.filter(t => !t.completed) : tasks;
-    const hiddenCount = tasks.length - visibleTasks.length;
-    taskCount.textContent = tasks.length + (tasks.length === 1 ? ' task' : ' tasks') +
-      (hiddenCount > 0 ? ` (${hiddenCount} completed hidden)` : '');
+    // Kukunin lang ang mga HINDI pa tapos na tasks (active tasks)
+const activeTasks = tasks.filter(t => !t.completed);
+const visibleTasks = hideCompleted ? activeTasks : tasks;
+
+// Ang ilalabas na bilang ay para lang sa mga natitirang gagawin pa
+taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task left' : ' tasks left');
     emptyState.style.display = visibleTasks.length === 0 ? 'block' : 'none';
     emptyState.textContent = tasks.length === 0
       ? 'No tasks yet. Add your first one above.'
@@ -1358,9 +1507,10 @@
   }
 
   async function toggleTaskComplete(task) {
-    await updateTaskOnServer(task.id, { completed: !task.completed });
-    await loadTasks();
-  }
+  await updateTaskOnServer(task.id, { completed: !task.completed });
+  await loadTasks();
+  render(); // <--- Idagdag ito para mag-reload ang List at Counter
+}
 
   async function deleteTask(id) {
     await deleteTaskOnServer(id);
@@ -1626,11 +1776,44 @@
     });
   }
 
+ function updateProgress() {
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  
+  if (!tasks || tasks.length === 0) {
+    if (progressBar) progressBar.style.width = '0%';
+    if (progressText) progressText.textContent = '0% Completed';
+    return;
+  }
+
+  const completedTasks = tasks.filter(t => t.completed).length;
+  const percent = Math.round((completedTasks / tasks.length) * 100);
+
+  if (progressBar) progressBar.style.width = percent + '%';
+  if (progressText) progressText.textContent = percent + '% Completed';
+}
+
   checkNotificationPermission();
   loadTasks();
   loadTrash();
   // Re-sync and refresh countdown labels periodically while the app is open.
   setInterval(loadTasks, 20000);
+  // ---- Dark Mode Switcher ----
+const themeToggleBtn = document.getElementById('themeToggle');
+
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark-mode');
+  if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
+}
+
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
+}
 </script>
 </body>
 </html>
