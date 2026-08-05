@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>To-Do List Manager</title>
+<title> Aki's To-Do List Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3d5a4c">
 <style>
@@ -17,7 +17,7 @@
     --danger: #b5453f;
     --muted: #8a8477;
     --warn: #ad7a2c;
-    --warn-light: #f7ecd9;
+    --warn-light: #e7bc72;
   }
 
   * { box-sizing: border-box; }
@@ -655,6 +655,8 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 8px;
+
+
   }
 </style>
 </head>
@@ -749,14 +751,14 @@
   let selectedDayKey = toDateKey(new Date());
 
   const MOTIVATIONAL_LINES = [
-    'Ayos! Isa pang hakbang palapit sa goal mo.',
-    'Galing! Konti na lang, kaya mo yan.',
-    'Nice, dagdag task, dagdag laban.',
-    'Push mo yan! Isa-isahin lang natin.',
-    'Sige, sulong! Bawat task, progress yan.',
-    'Ito na, listahan ng magiging tagumpay mo.',
-    'Steady lang, kaya mo talaga to.',
-    'Bagong task, bagong tsansang mag-shine.',
+    'Keep it up, Aki! Every task brings you one step closer to your goal.',
+    'Nice work, boi! Just a few more steps—you can do it!',
+    'Nice boi! Every task you add is another challenge to conquer.',
+    'Go for it boi! Keep working hard.',
+    'Keep fighting Aki! Every task is progress.',
+    'This is where your success begins boi.',
+    'Keep going, Aki. I know you can do it.',
+    'New task unlocked, Aki!',
   ];
 
   const taskList = document.getElementById('taskList');
@@ -1009,7 +1011,7 @@
     emptyState.style.display = visibleTasks.length === 0 ? 'block' : 'none';
     emptyState.textContent = tasks.length === 0
       ? 'No tasks yet. Add your first one above.'
-      : 'Walang task na ipapakita — naka-hide ang mga tapos na.';
+      : 'No tasks to show — completed tasks are hidden.';
 
     visibleTasks.forEach((task) => {
       const i = tasks.indexOf(task);
@@ -1287,7 +1289,7 @@
         confirmBox.className = 'hard-delete-confirm';
 
         const warn = document.createElement('p');
-        warn.textContent = `I-type ang "${task.text}" para permanenteng mabura ito. Hindi na ito mababawi.`;
+        warn.textContent = `Please type the task name "${task.text}" to confirm deletion. This will permanently delete the task. It cannot be recovered.`;
         confirmBox.appendChild(warn);
 
         const row2 = document.createElement('div');
@@ -1296,7 +1298,7 @@
         const input = document.createElement('input');
         input.type = 'text';
         input.id = 'hardDeleteInput_' + task.id;
-        input.placeholder = 'I-type ang pangalan ng task';
+        input.placeholder = 'Please enter the task name.';
         input.autocomplete = 'off';
         row2.appendChild(input);
 
@@ -1387,7 +1389,7 @@
     const res = await hardDeleteTaskOnServer(id, confirmText);
     if (res.status === 400) {
       const errBox = document.getElementById('hardDeleteError_' + id);
-      if (errBox) errBox.textContent = 'Hindi tugma ang na-type mo sa pangalan ng task. Subukan ulit.';
+      if (errBox) errBox.textContent = 'Task name does not match. Please try again.';
       return;
     }
     hardDeleteConfirmFor = null;
