@@ -887,6 +887,7 @@ body.dark-mode input[type="datetime-local"] {
   let editingIndex = null;         // index of main task being text/time-edited
   let editingSub = null;           // { taskId, subId } of subtask being text/time-edited
   let addingSubtaskFor = null;     // taskId currently showing the "add subtask" inline form
+  let weekAddingSubFor = null;     // taskId currently showing the subtask add form in Week view
   let hideCompleted = localStorage.getItem('hideCompleted') === '1';
   let hardDeleteConfirmFor = null; // task id currently showing the "type the name" confirm box
 
@@ -931,9 +932,6 @@ body.dark-mode input[type="datetime-local"] {
     showMotivation._t = setTimeout(() => motivationToast.classList.remove('show'), 2200);
   }
 
-  // ---- Push notification subscription ----
-  // Tasks/subtasks are checked server-side every minute, so notifications
-  // arrive even if this tab/app is closed — as long as you've subscribed once.
   function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -986,7 +984,7 @@ body.dark-mode input[type="datetime-local"] {
     }
   });
 
-  // ---- Storage (server-backed, so scheduled checks work even when closed) ----
+  // ---- Storage ----
   async function loadTasks() {
     try {
       const res = await fetch('/api/tasks');
@@ -1147,16 +1145,24 @@ body.dark-mode input[type="datetime-local"] {
   });
 
   // ==========================================================
-  // LIST VIEW
+  // LIST VIEW (Sorted by Priority / Due Time)
   // ==========================================================
   function renderList() {
     taskList.innerHTML = '';
-    // Kukunin lang ang mga HINDI pa tapos na tasks (active tasks)
-const activeTasks = tasks.filter(t => !t.completed);
-const visibleTasks = hideCompleted ? activeTasks : tasks;
 
-// Ang ilalabas na bilang ay para lang sa mga natitirang gagawin pa
-taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task left' : ' tasks left');
+    // Sort: Inilalagay ang pinakamalapit na schedule sa itaas
+    const sortedTasks = [...tasks].sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      if (a.dueAt && b.dueAt) return new Date(a.dueAt) - new Date(b.dueAt);
+      if (a.dueAt && !b.dueAt) return -1;
+      if (!a.dueAt && b.dueAt) return 1;
+      return 0;
+    });
+
+    const activeTasks = sortedTasks.filter(t => !t.completed);
+    const visibleTasks = hideCompleted ? activeTasks : sortedTasks;
+
+    taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task left' : ' tasks left');
     emptyState.style.display = visibleTasks.length === 0 ? 'block' : 'none';
     emptyState.textContent = tasks.length === 0
       ? 'No tasks yet. Add your first one above.'
@@ -1170,7 +1176,6 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
       const top = document.createElement('div');
       top.className = 'task-top';
 
-      // Checkable bullet
       const check = document.createElement('button');
       check.className = 'task-check' + (task.completed ? ' done' : '');
       check.textContent = task.completed ? '✓' : '';
@@ -1237,7 +1242,6 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
       top.appendChild(actions);
       li.appendChild(top);
 
-      // ---- Subtasks ----
       const subtasks = task.subtasks || [];
       if (subtasks.length > 0) {
         const subWrap = document.createElement('div');
@@ -1353,7 +1357,7 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
     return row;
   }
 
-  function renderAddSubtaskRow(task) {
+  function renderAddSubtaskRow(task, defaultTimeValue = '') {
     const wrap = document.createElement('div');
     wrap.className = 'add-subtask-row';
 
@@ -1368,23 +1372,34 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
 
     const timeInput = document.createElement('input');
     timeInput.type = 'datetime-local';
+    if (defaultTimeValue) timeInput.value = defaultTimeValue;
     row2.appendChild(timeInput);
 
     const addBtn = document.createElement('button');
     addBtn.textContent = 'Add';
-    addBtn.onclick = () => addSubtask(task, input.value, timeInput.value);
+    addBtn.onclick = () => {
+      addSubtask(task, input.value, timeInput.value);
+      weekAddingSubFor = null;
+    };
     row2.appendChild(addBtn);
 
     const cancelBtn = document.createElement('button');
     cancelBtn.className = 'cancel-btn';
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.onclick = () => { addingSubtaskFor = null; render(); };
+    cancelBtn.onclick = () => { 
+      addingSubtaskFor = null; 
+      weekAddingSubFor = null; 
+      render(); 
+    };
     row2.appendChild(cancelBtn);
 
     wrap.appendChild(row2);
 
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') addSubtask(task, input.value, timeInput.value);
+      if (e.key === 'Enter') {
+        addSubtask(task, input.value, timeInput.value);
+        weekAddingSubFor = null;
+      }
     });
 
     return wrap;
@@ -1483,7 +1498,7 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
     });
   }
 
-  // ---- List view actions ----
+  // ---- Actions ----
   async function addTask() {
     const value = newTaskInput.value.trim();
     if (!value) return;
@@ -1507,10 +1522,9 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
   }
 
   async function toggleTaskComplete(task) {
-  await updateTaskOnServer(task.id, { completed: !task.completed });
-  await loadTasks();
-  render(); // <--- Idagdag ito para mag-reload ang List at Counter
-}
+    await updateTaskOnServer(task.id, { completed: !task.completed });
+    await loadTasks();
+  }
 
   async function deleteTask(id) {
     await deleteTaskOnServer(id);
@@ -1582,7 +1596,7 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
   });
 
   // ==========================================================
-  // SHARED: flatten tasks + subtasks that have a due date
+  // SHARED: Occurrences List
   // ==========================================================
   function buildOccurrences() {
     const list = [];
@@ -1636,7 +1650,7 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
   }
 
   // ==========================================================
-  // WEEK VIEW
+  // WEEK VIEW (With Subtask Inline Add)
   // ==========================================================
   const weekDaysEl = document.getElementById('weekDays');
   const weekLabelEl = document.getElementById('weekLabel');
@@ -1673,7 +1687,27 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
         empty.textContent = 'No scheduled tasks';
         dayEl.appendChild(empty);
       } else {
-        dayOccs.forEach(occ => dayEl.appendChild(renderOccRow(occ)));
+        dayOccs.forEach(occ => {
+          const occWrap = document.createElement('div');
+          occWrap.appendChild(renderOccRow(occ));
+
+          if (!occ.isSub) {
+            if (weekAddingSubFor === occ.taskId) {
+              const defaultDate = new Date(d);
+              defaultDate.setHours(12, 0, 0, 0);
+              const defaultTimeStr = toLocalInputValue(defaultDate);
+              occWrap.appendChild(renderAddSubtaskRow(occ.task, defaultTimeStr));
+            } else {
+              const addBtn = document.createElement('button');
+              addBtn.className = 'add-subtask-toggle';
+              addBtn.style.marginLeft = '28px';
+              addBtn.textContent = '+ Subtask';
+              addBtn.onclick = () => { weekAddingSubFor = occ.taskId; renderWeek(); };
+              occWrap.appendChild(addBtn);
+            }
+          }
+          dayEl.appendChild(occWrap);
+        });
       }
 
       weekDaysEl.appendChild(dayEl);
@@ -1704,8 +1738,6 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
 
     const year = monthCursor.getFullYear();
     const month = monthCursor.getMonth();
-    // getDay() is Sunday-based (0=Sun..6=Sat); shift so Monday=0..Sunday=6,
-    // matching the Mon–Sun column order of the weekday labels above.
     const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayKey = toDateKey(new Date());
@@ -1740,7 +1772,6 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
       monthGridEl.appendChild(cell);
     }
 
-    // Selected day panel
     const selDate = new Date(selectedDayKey + 'T00:00:00');
     selectedDayTitleEl.textContent = selDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
     selectedDayListEl.innerHTML = '';
@@ -1769,7 +1800,6 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
     render();
   });
 
-  // Register service worker (enables "Add to Home Screen" install + push notifications)
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -1796,24 +1826,24 @@ taskCount.textContent = activeTasks.length + (activeTasks.length === 1 ? ' task 
   checkNotificationPermission();
   loadTasks();
   loadTrash();
-  // Re-sync and refresh countdown labels periodically while the app is open.
   setInterval(loadTasks, 20000);
+
   // ---- Dark Mode Switcher ----
-const themeToggleBtn = document.getElementById('themeToggle');
+  const themeToggleBtn = document.getElementById('themeToggle');
 
-if (localStorage.getItem('theme') === 'dark') {
-  document.body.classList.add('dark-mode');
-  if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
-}
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+    if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
+  }
 
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  });
-}
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+  }
 </script>
 </body>
 </html>
