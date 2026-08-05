@@ -829,6 +829,7 @@ body.dark-mode input[type="datetime-local"] {
     <button id="tabList" class="active">List</button>
     <button id="tabWeek">Week</button>
     <button id="tabMonth">Month</button>
+    <button id="tabReminders">🔁</button>
     <button id="tabTrash">🗑️</button>
   </div>
 
@@ -869,6 +870,27 @@ body.dark-mode input[type="datetime-local"] {
     </div>
   </div>
 
+  <div id="remindersView" style="display:none;">
+    <div class="trash-hint">Recurring reminders — these don't disappear after notifying. They loop again and again at the interval you set, until you delete or edit them.</div>
+    <div class="add-box">
+      <input type="text" id="newReminderText" placeholder="Reminder text..." autocomplete="off">
+      <div class="row2">
+        <input type="number" id="newReminderValue" min="1" value="1" style="width:64px; flex:none;">
+        <select id="newReminderUnit">
+          <option value="minutes">minute/s</option>
+          <option value="hours">hour/s</option>
+          <option value="days">day/s</option>
+        </select>
+        <button id="addReminderBtn">Add</button>
+      </div>
+      <div class="row2">
+        <input type="datetime-local" id="newReminderStart" title="Optional: first reminder time (if left blank, it starts after 1 interval)">
+      </div>
+    </div>
+    <ul class="tasks" id="remindersList" style="list-style:none; margin:0; padding:0;"></ul>
+    <div class="empty" id="remindersEmptyState" style="display:none;">No recurring reminders yet. Add one above.</div>
+  </div>
+
   <div id="trashView" style="display:none;">
     <div class="trash-hint">Deleted tasks stay here until you restore them or delete them forever.</div>
     <ul class="tasks" id="trashList" style="list-style:none; margin:0; padding:0;"></ul>
@@ -891,7 +913,9 @@ body.dark-mode input[type="datetime-local"] {
   let hideCompleted = localStorage.getItem('hideCompleted') === '1';
   let hardDeleteConfirmFor = null; // task id currently showing the "type the name" confirm box
 
-  let view = 'list';               // 'list' | 'week' | 'month' | 'trash'
+  let reminders = [];               // recurring reminders — separate from tasks
+  let editingReminderId = null;     // reminder id currently being edited
+  let view = 'list';               // 'list' | 'week' | 'month' | 'trash' | 'reminders'
   let weekOffset = 0;              // weeks from the current week
   let monthCursor = startOfMonth(new Date());
   let selectedDayKey = toDateKey(new Date());
@@ -921,6 +945,9 @@ body.dark-mode input[type="datetime-local"] {
   const trashViewEl = document.getElementById('trashView');
   const trashList = document.getElementById('trashList');
   const trashEmptyState = document.getElementById('trashEmptyState');
+  const remindersViewEl = document.getElementById('remindersView');
+  const remindersList = document.getElementById('remindersList');
+  const remindersEmptyState = document.getElementById('remindersEmptyState');
   const motivationToast = document.getElementById('motivationToast');
   const hideCompletedBtn = document.getElementById('hideCompletedBtn');
 
@@ -1069,6 +1096,39 @@ body.dark-mode input[type="datetime-local"] {
     await fetch(`/api/tasks/${taskId}/subtasks/${subId}`, { method: 'DELETE' });
   }
 
+  // ---- Reminders API ----
+  async function loadReminders() {
+    try {
+      const res = await fetch('/api/reminders');
+      reminders = await res.json();
+    } catch (e) {
+      reminders = [];
+    }
+    if (view === 'reminders') renderReminders();
+  }
+
+  async function createReminderOnServer(fields) {
+    const res = await fetch('/api/reminders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields),
+    });
+    return res.json();
+  }
+
+  async function updateReminderOnServer(id, fields) {
+    const res = await fetch('/api/reminders/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields),
+    });
+    return res.json();
+  }
+
+  async function deleteReminderOnServer(id) {
+    await fetch('/api/reminders/' + id, { method: 'DELETE' });
+  }
+
   // ---- Formatting helpers ----
   function formatDue(dueAt) {
     if (!dueAt) return null;
@@ -1118,15 +1178,18 @@ body.dark-mode input[type="datetime-local"] {
     document.getElementById('tabWeek').classList.toggle('active', view === 'week');
     document.getElementById('tabMonth').classList.toggle('active', view === 'month');
     document.getElementById('tabTrash').classList.toggle('active', view === 'trash');
+    document.getElementById('tabReminders').classList.toggle('active', view === 'reminders');
     listViewEl.style.display = view === 'list' ? 'block' : 'none';
     weekViewEl.style.display = view === 'week' ? 'block' : 'none';
     monthViewEl.style.display = view === 'month' ? 'block' : 'none';
     trashViewEl.style.display = view === 'trash' ? 'block' : 'none';
+    remindersViewEl.style.display = view === 'reminders' ? 'block' : 'none';
 
     if (view === 'list') renderList();
     else if (view === 'week') renderWeek();
     else if (view === 'month') renderMonth();
-    else renderTrash();
+    else if (view === 'trash') renderTrash();
+    else renderReminders();
 
     updateProgress();
   }
@@ -1135,6 +1198,7 @@ body.dark-mode input[type="datetime-local"] {
   document.getElementById('tabWeek').addEventListener('click', () => { view = 'week'; render(); });
   document.getElementById('tabMonth').addEventListener('click', () => { view = 'month'; render(); });
   document.getElementById('tabTrash').addEventListener('click', () => { view = 'trash'; hardDeleteConfirmFor = null; loadTrash(); render(); });
+  document.getElementById('tabReminders').addEventListener('click', () => { view = 'reminders'; editingReminderId = null; loadReminders(); render(); });
 
   hideCompletedBtn.textContent = hideCompleted ? 'Show completed' : 'Hide completed';
   hideCompletedBtn.addEventListener('click', () => {
@@ -1498,6 +1562,155 @@ body.dark-mode input[type="datetime-local"] {
     });
   }
 
+  // ==========================================================
+  // RECURRING REMINDERS VIEW
+  // Independent of List/Week/Month/Trash. A reminder loops forever at its
+  // own interval — it is never auto-removed, only deleted or replaced (edited).
+  // ==========================================================
+  function formatReminderSchedule(r) {
+    const next = new Date(r.nextAt);
+    const nextLabel = next.toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+    return `Every ${r.intervalValue} ${r.intervalUnit} — next: ${nextLabel}`;
+  }
+
+  function renderReminders() {
+    remindersList.innerHTML = '';
+    remindersEmptyState.style.display = reminders.length === 0 ? 'block' : 'none';
+
+    reminders.forEach(r => {
+      const li = document.createElement('li');
+      li.className = 'trash-task';
+
+      if (editingReminderId === r.id) {
+        const textInput = document.createElement('input');
+        textInput.type = 'text';
+        textInput.id = 'reminderEditText';
+        textInput.value = r.text;
+        textInput.autocomplete = 'off';
+        textInput.style.width = '100%';
+        textInput.style.marginBottom = '8px';
+        li.appendChild(textInput);
+
+        const row2 = document.createElement('div');
+        row2.className = 'row2';
+
+        const valueInput = document.createElement('input');
+        valueInput.type = 'number';
+        valueInput.min = '1';
+        valueInput.id = 'reminderEditValue';
+        valueInput.value = r.intervalValue;
+        valueInput.style.width = '64px';
+        valueInput.style.flex = 'none';
+        row2.appendChild(valueInput);
+
+        const unitSelect = document.createElement('select');
+        unitSelect.id = 'reminderEditUnit';
+        ['minutes', 'hours', 'days'].forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u;
+          opt.textContent = u;
+          if (u === r.intervalUnit) opt.selected = true;
+          unitSelect.appendChild(opt);
+        });
+        row2.appendChild(unitSelect);
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Save';
+        saveBtn.onclick = () => saveReminderEdit(r);
+        row2.appendChild(saveBtn);
+
+        li.appendChild(row2);
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.className = 'btn-restore';
+        cancelBtn.style.marginTop = '8px';
+        cancelBtn.onclick = () => { editingReminderId = null; renderReminders(); };
+        li.appendChild(cancelBtn);
+
+        setTimeout(() => textInput.focus(), 0);
+      } else {
+        const text = document.createElement('div');
+        text.className = 'trash-task-text';
+        text.textContent = r.text;
+        li.appendChild(text);
+
+        const meta = document.createElement('div');
+        meta.className = 'trash-task-meta';
+        meta.textContent = formatReminderSchedule(r);
+        li.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'trash-task-actions';
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-restore';
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = () => { editingReminderId = r.id; renderReminders(); };
+        actions.appendChild(editBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-hard-delete';
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => deleteReminder(r.id);
+        actions.appendChild(delBtn);
+
+        li.appendChild(actions);
+      }
+
+      remindersList.appendChild(li);
+    });
+  }
+
+  async function addReminder() {
+    const textEl = document.getElementById('newReminderText');
+    const valueEl = document.getElementById('newReminderValue');
+    const unitEl = document.getElementById('newReminderUnit');
+    const startEl = document.getElementById('newReminderStart');
+
+    const text = textEl.value.trim();
+    if (!text) return;
+    const intervalValue = Math.max(1, Number(valueEl.value) || 1);
+    const intervalUnit = unitEl.value;
+    const startAt = startEl.value ? new Date(startEl.value).toISOString() : undefined;
+
+    textEl.value = '';
+    valueEl.value = '1';
+    startEl.value = '';
+
+    await createReminderOnServer({ text, intervalValue, intervalUnit, startAt });
+    await loadReminders();
+    showMotivation();
+  }
+
+  async function saveReminderEdit(r) {
+    const textInput = document.getElementById('reminderEditText');
+    const valueInput = document.getElementById('reminderEditValue');
+    const unitInput = document.getElementById('reminderEditUnit');
+
+    const text = textInput.value.trim() || r.text;
+    const intervalValue = Math.max(1, Number(valueInput.value) || 1);
+    const intervalUnit = unitInput.value;
+
+    editingReminderId = null;
+    // Replacing (editing) the schedule restarts the loop from now.
+    await updateReminderOnServer(r.id, { text, intervalValue, intervalUnit });
+    await loadReminders();
+  }
+
+  async function deleteReminder(id) {
+    if (!confirm('Delete this recurring reminder? It will stop looping and cannot be recovered.')) return;
+    await deleteReminderOnServer(id);
+    await loadReminders();
+  }
+
+  document.getElementById('addReminderBtn').addEventListener('click', addReminder);
+  document.getElementById('newReminderText').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addReminder();
+  });
+
   // ---- Actions ----
   async function addTask() {
     const value = newTaskInput.value.trim();
@@ -1684,7 +1897,7 @@ body.dark-mode input[type="datetime-local"] {
       if (dayOccs.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'occ-empty';
-        empty.textContent = 'No scheduled tasks';
+        empty.textContent = 'No scheduled';
         dayEl.appendChild(empty);
       } else {
         dayOccs.forEach(occ => {
@@ -1826,7 +2039,9 @@ body.dark-mode input[type="datetime-local"] {
   checkNotificationPermission();
   loadTasks();
   loadTrash();
+  loadReminders();
   setInterval(loadTasks, 20000);
+  setInterval(loadReminders, 20000);
 
   // ---- Dark Mode Switcher ----
   const themeToggleBtn = document.getElementById('themeToggle');

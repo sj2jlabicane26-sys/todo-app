@@ -62,18 +62,44 @@ function normalizeSubtask(s) {
   };
 }
 
+// A recurring reminder is separate from tasks: it isn't part of List/Week/
+// Month/Trash, has no "completed" or "deletedAt" state, and never gets
+// consumed after it fires. It just keeps looping at whatever interval the
+// user set (nextAt + interval, over and over) until the user deletes it
+// or replaces it (edits its text/interval/start time).
+const REMINDER_UNITS = ['minutes', 'hours', 'days'];
+const UNIT_MS = { minutes: 60 * 1000, hours: 60 * 60 * 1000, days: 24 * 60 * 60 * 1000 };
+
+function reminderIntervalMs(value, unit) {
+  const v = Math.max(1, Number(value) || 1);
+  const u = REMINDER_UNITS.includes(unit) ? unit : 'minutes';
+  return v * UNIT_MS[u];
+}
+
+function normalizeReminder(r) {
+  return {
+    id: r.id,
+    text: r.text,
+    intervalValue: Math.max(1, Number(r.intervalValue) || 1),
+    intervalUnit: REMINDER_UNITS.includes(r.intervalUnit) ? r.intervalUnit : 'minutes',
+    nextAt: r.nextAt,
+    createdAt: r.createdAt || new Date().toISOString(),
+  };
+}
+
 function loadData() {
   if (!fs.existsSync(DATA_FILE)) {
-    return { tasks: [], subscriptions: [] };
+    return { tasks: [], subscriptions: [], reminders: [] };
   }
   try {
     const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     return {
       tasks: Array.isArray(raw.tasks) ? raw.tasks.map(normalizeTask) : [],
       subscriptions: Array.isArray(raw.subscriptions) ? raw.subscriptions : [],
+      reminders: Array.isArray(raw.reminders) ? raw.reminders.map(normalizeReminder) : [],
     };
   } catch (e) {
-    return { tasks: [], subscriptions: [] };
+    return { tasks: [], subscriptions: [], reminders: [] };
   }
 }
 
@@ -248,6 +274,71 @@ app.delete('/api/tasks/:id/subtasks/:subId', (req, res) => {
   res.status(204).end();
 });
 
+// ---- API: recurring reminders ----
+// Independent feature — does not touch List/Week/Month/Trash. Once created,
+// a reminder keeps notifying on a loop at its own interval forever; it's
+// never auto-removed, only by explicit delete or by being edited
+// ("replaced"), which restarts its schedule from the new values.
+app.get('/api/reminders', (req, res) => {
+  res.json(data.reminders);
+});
+
+app.post('/api/reminders', (req, res) => {
+  const { text, intervalValue, intervalUnit, startAt } = req.body;
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'Reminder text is required' });
+  }
+  const value = Math.max(1, Number(intervalValue) || 0);
+  if (!value) {
+    return res.status(400).json({ error: 'Interval value is required' });
+  }
+  const unit = REMINDER_UNITS.includes(intervalUnit) ? intervalUnit : 'minutes';
+  const nextAt = startAt
+    ? new Date(startAt).toISOString()
+    : new Date(Date.now() + reminderIntervalMs(value, unit)).toISOString();
+
+  const reminder = {
+    id: nextId(),
+    text: text.trim(),
+    intervalValue: value,
+    intervalUnit: unit,
+    nextAt,
+    createdAt: new Date().toISOString(),
+  };
+  data.reminders.push(reminder);  saveData(data);
+  res.status(201).json(reminder);
+});
+
+// Editing = replacing the reminder: the loop restarts from the new schedule.
+app.put('/api/reminders/:id', (req, res) => {
+  const reminder = data.reminders.find(r => r.id === req.params.id);
+  if (!reminder) return res.status(404).json({ error: 'Reminder not found' });
+
+  const { text, intervalValue, intervalUnit, startAt } = req.body;
+  if (typeof text === 'string' && text.trim()) reminder.text = text.trim();
+  if (intervalValue !== undefined) reminder.intervalValue = Math.max(1, Number(intervalValue) || 1);
+  if (intervalUnit !== undefined && REMINDER_UNITS.includes(intervalUnit)) {
+    reminder.intervalUnit = intervalUnit;
+  }
+  reminder.nextAt = startAt
+    ? new Date(startAt).toISOString()
+    : new Date(Date.now() + reminderIntervalMs(reminder.intervalValue, reminder.intervalUnit)).toISOString();
+
+  saveData(data);
+  res.json(reminder);
+});
+
+// Only way a reminder truly disappears — an explicit delete.
+app.delete('/api/reminders/:id', (req, res) => {
+  const before = data.reminders.length;
+  data.reminders = data.reminders.filter(r => r.id !== req.params.id);
+  if (data.reminders.length === before) {
+    return res.status(404).json({ error: 'Reminder not found' });
+  }
+  saveData(data);
+  res.status(204).end();
+});
+
 // ---- Notification sending ----
 // Returns true if the push was actually delivered to at least one
 // subscription (or if there were no subscriptions to begin with — in
@@ -310,6 +401,30 @@ cron.schedule('* * * * *', async () => {
       }
     }
   }
+
+  // Recurring reminders: fire, then push nextAt forward by the interval —
+  // never marked "done", so it just loops again on its own. tag+alarm:true
+  // tells the phone to vibrate/alert every single loop, not just the first time.
+  for (const reminder of data.reminders) {
+    const dueTime = new Date(reminder.nextAt).getTime();
+    if (dueTime <= now) {
+      const delivered = await sendPushToAll({
+        title: 'Reminder',
+        body: reminder.text,
+        tag: 'reminder-' + reminder.id,
+        alarm: true,
+      });
+      if (delivered) {
+        const step = reminderIntervalMs(reminder.intervalValue, reminder.intervalUnit);
+        let next = dueTime;
+        while (next <= now) next += step; // catch up without spamming if the server was down
+        reminder.nextAt = new Date(next).toISOString();
+        changed = true;
+      }
+      // if delivery failed, leave nextAt as-is so it's retried next tick
+    }
+  }
+
   if (changed) saveData(data);
 });
 

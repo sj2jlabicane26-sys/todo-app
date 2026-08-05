@@ -18,12 +18,26 @@ self.addEventListener('push', (event) => {
     // fall back to default payload above
   }
 
+  // Recurring reminders are marked alarm:true — make them vibrate and stay
+  // on screen (like a phone alarm) instead of a quiet, easy-to-miss toast.
+  // `tag` + `renotify` make sure the phone alerts again on every loop, not
+  // just the very first time this reminder fires.
+  const options = {
+    body: payload.body,
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+  };
+  if (payload.alarm) {
+    options.vibrate = [300, 150, 300, 150, 300, 150, 600];
+    options.requireInteraction = true; // stays visible until the user dismisses it
+  }
+  if (payload.tag) {
+    options.tag = payload.tag;
+    options.renotify = true; // re-alert even though the tag repeats each loop
+  }
+
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: 'icon-192.png',
-      badge: 'icon-192.png',
-    })
+    self.registration.showNotification(payload.title, options)
   );
 });
 
