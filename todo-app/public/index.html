@@ -81,7 +81,7 @@
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 14px;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
   }
 
   .add-box input[type="text"] {
@@ -111,7 +111,7 @@
 
   .add-box input:focus { outline: none; border-color: var(--accent); }
 
-  .add-box button {
+  .add-box button, .add-subtask-row button {
     padding: 0 18px;
     border: none;
     border-radius: 6px;
@@ -123,7 +123,33 @@
     cursor: pointer;
   }
 
-  .add-box button:active { opacity: 0.85; }
+  .add-box button:active, .add-subtask-row button:active { opacity: 0.85; }
+
+  /* ---- View tabs ---- */
+  .view-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .view-tabs button {
+    flex: 1;
+    padding: 9px 4px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.82rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .view-tabs button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
 
   .list-header {
     display: flex;
@@ -159,18 +185,54 @@
   }
 
   li.task.overdue { border-color: var(--danger); }
+  li.task.completed { opacity: 0.7; }
 
   .task-top { display: flex; align-items: flex-start; gap: 10px; }
 
-  .task-num {
+  /* ---- Checkable bullet ---- */
+  .task-check {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 1px;
     font-size: 0.75rem;
-    color: var(--muted);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    min-width: 18px;
-    padding-top: 2px;
+    line-height: 1;
+    color: #fff;
   }
 
-  .task-text { flex: 1; font-size: 1rem; line-height: 1.4; word-break: break-word; }
+  .task-check.done { background: var(--accent); }
+
+  .subtask-check {
+    width: 17px;
+    height: 17px;
+    min-width: 17px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 2px;
+    font-size: 0.62rem;
+    line-height: 1;
+    color: #fff;
+  }
+
+  .subtask-check.done { background: var(--accent); }
+
+  .task-text { flex: 1; font-size: 1rem; line-height: 1.4; word-break: break-word; min-width: 0; }
+
+  .task-text .task-label.completed { text-decoration: line-through; color: var(--muted); }
 
   .task-text input[type="text"] {
     width: 100%;
@@ -220,6 +282,100 @@
   .btn-delete:hover { background: #f6e6e5; }
   .btn-save { color: #fff; background: var(--accent) !important; }
 
+  /* ---- Subtasks ---- */
+  .subtasks {
+    margin: 10px 0 0 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .subtask { display: flex; align-items: flex-start; gap: 8px; }
+
+  .subtask-text { flex: 1; font-size: 0.9rem; line-height: 1.35; min-width: 0; word-break: break-word; }
+  .subtask-text .subtask-label.completed { text-decoration: line-through; color: var(--muted); }
+
+  .subtask-text input[type="text"] {
+    width: 100%;
+    padding: 5px 7px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    background: var(--accent-light);
+    margin-bottom: 5px;
+  }
+
+  .subtask-schedule {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .subtask-schedule.overdue-text { color: var(--danger); font-weight: 600; }
+
+  .subtask-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  .subtask-actions button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.7rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  .subtask-actions .btn-delete { color: var(--danger); }
+
+  .add-subtask-toggle {
+    margin: 8px 0 0 32px;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .add-subtask-row {
+    margin: 8px 0 0 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .add-subtask-row input[type="text"] {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    font-size: 0.88rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .add-subtask-row .row2 { display: flex; gap: 6px; }
+
+  .add-subtask-row input[type="datetime-local"] {
+    flex: 1;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    font-size: 0.82rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .add-subtask-row button { padding: 0 14px; font-size: 0.82rem; }
+  .add-subtask-row .cancel-btn {
+    background: none; color: var(--muted); border: 1px solid var(--line);
+  }
+
   .empty {
     text-align: center;
     color: var(--muted);
@@ -236,6 +392,150 @@
     font-size: 0.72rem;
     color: var(--muted);
     margin-top: 24px;
+  }
+
+  /* ---- Week view ---- */
+  .week-nav, .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  .week-nav button, .month-nav button {
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--ink);
+    font-size: 0.9rem;
+  }
+
+  .week-nav span, .month-nav span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .week-day {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .week-day.today { border-color: var(--accent); }
+
+  .week-day-header {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .week-day.today .week-day-header { color: var(--accent); }
+
+  .occ-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+
+  .occ-text { flex: 1; font-size: 0.92rem; min-width: 0; word-break: break-word; }
+  .occ-text.completed { text-decoration: line-through; color: var(--muted); }
+  .occ-parent {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.68rem;
+    color: var(--muted);
+    display: block;
+  }
+  .occ-time {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .occ-time.overdue-text { color: var(--danger); font-weight: 600; }
+
+  .occ-empty {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* ---- Month view ---- */
+  .weekday-labels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .month-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+
+  .month-cell.empty { border: none; background: none; cursor: default; }
+  .month-cell.today { border-color: var(--accent); font-weight: 700; }
+  .month-cell.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .month-cell .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--warn);
+    position: absolute;
+    bottom: 6px;
+  }
+
+  .month-cell.selected .dot { background: #fff; }
+
+  .selected-day-panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  .selected-day-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
   }
 </style>
 </head>
@@ -259,20 +559,60 @@
     </div>
   </div>
 
-  <div class="list-header">
-    <span id="taskCount">0 tasks</span>
-    <button id="clearAllBtn">Clear all</button>
+  <div class="view-tabs">
+    <button id="tabList" class="active">List</button>
+    <button id="tabWeek">Week</button>
+    <button id="tabMonth">Month</button>
   </div>
 
-  <ul class="tasks" id="taskList"></ul>
-  <div class="empty" id="emptyState" style="display:none;">No tasks yet. Add your first one above.</div>
+  <div id="listView">
+    <div class="list-header">
+      <span id="taskCount">0 tasks</span>
+      <button id="clearAllBtn">Clear all</button>
+    </div>
+    <ul class="tasks" id="taskList"></ul>
+    <div class="empty" id="emptyState" style="display:none;">No tasks yet. Add your first one above.</div>
+  </div>
+
+  <div id="weekView" style="display:none;">
+    <div class="week-nav">
+      <button id="weekPrev">&#8249;</button>
+      <span id="weekLabel"></span>
+      <button id="weekNext">&#8250;</button>
+    </div>
+    <div id="weekDays"></div>
+  </div>
+
+  <div id="monthView" style="display:none;">
+    <div class="month-nav">
+      <button id="monthPrev">&#8249;</button>
+      <span id="monthLabel"></span>
+      <button id="monthNext">&#8250;</button>
+    </div>
+    <div class="weekday-labels">
+      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+    </div>
+    <div class="month-grid" id="monthGrid"></div>
+    <div class="selected-day-panel">
+      <div class="selected-day-title" id="selectedDayTitle"></div>
+      <div id="selectedDayList"></div>
+    </div>
+  </div>
 
   <div class="status" id="statusLine">Ready.</div>
 </div>
 
 <script>
-  let tasks = []; // { id, text, dueAt: ISO string or null, notified: bool }
-  let editingIndex = null;
+  // task shape: { id, text, dueAt: ISO string or null, completed, subtasks: [{id, text, dueAt, completed}] }
+  let tasks = [];
+  let editingIndex = null;         // index of main task being text/time-edited
+  let editingSub = null;           // { taskId, subId } of subtask being text/time-edited
+  let addingSubtaskFor = null;     // taskId currently showing the "add subtask" inline form
+
+  let view = 'list';               // 'list' | 'week' | 'month'
+  let weekOffset = 0;              // weeks from the current week
+  let monthCursor = startOfMonth(new Date());
+  let selectedDayKey = toDateKey(new Date());
 
   const taskList = document.getElementById('taskList');
   const emptyState = document.getElementById('emptyState');
@@ -282,9 +622,13 @@
   const newTaskTime = document.getElementById('newTaskTime');
   const permBanner = document.getElementById('permBanner');
 
+  const listViewEl = document.getElementById('listView');
+  const weekViewEl = document.getElementById('weekView');
+  const monthViewEl = document.getElementById('monthView');
+
   // ---- Push notification subscription ----
-  // Tasks are checked server-side every minute, so notifications arrive
-  // even if this tab/app is closed — as long as you've subscribed once.
+  // Tasks/subtasks are checked server-side every minute, so notifications
+  // arrive even if this tab/app is closed — as long as you've subscribed once.
   function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -359,11 +703,11 @@
     return res.json();
   }
 
-  async function updateTaskOnServer(id, text, dueAt) {
+  async function updateTaskOnServer(id, fields) {
     const res = await fetch('/api/tasks/' + id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, dueAt }),
+      body: JSON.stringify(fields),
     });
     return res.json();
   }
@@ -374,6 +718,28 @@
 
   async function clearAllOnServer() {
     await fetch('/api/tasks', { method: 'DELETE' });
+  }
+
+  async function createSubtaskOnServer(taskId, text, dueAt) {
+    const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, dueAt }),
+    });
+    return res.json();
+  }
+
+  async function updateSubtaskOnServer(taskId, subId, fields) {
+    const res = await fetch(`/api/tasks/${taskId}/subtasks/${subId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields),
+    });
+    return res.json();
+  }
+
+  async function deleteSubtaskOnServer(taskId, subId) {
+    await fetch(`/api/tasks/${taskId}/subtasks/${subId}`, { method: 'DELETE' });
   }
 
   // ---- Formatting helpers ----
@@ -399,36 +765,66 @@
     return { text: `Due ${dateLabel} — ${countdown}`, overdue: false };
   }
 
-  function renderTimeLabelsOnly() {
-    document.querySelectorAll('.task-schedule[data-index]').forEach(el => {
-      const i = parseInt(el.getAttribute('data-index'), 10);
-      const task = tasks[i];
-      if (!task || !task.dueAt) return;
-      const info = formatDue(task.dueAt);
-      el.textContent = info.text;
-      el.classList.toggle('overdue-text', info.overdue);
-      const li = el.closest('li.task');
-      if (li) li.classList.toggle('overdue', info.overdue);
-    });
+  function toLocalInputValue(date) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  // ---- Rendering ----
+  function toDateKey(date) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+
+  function startOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  }
+
+  function startOfWeek(date) {
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    d.setDate(d.getDate() - d.getDay());
+    return d;
+  }
+
+  // ---- Top-level render dispatcher ----
   function render() {
+    document.getElementById('tabList').classList.toggle('active', view === 'list');
+    document.getElementById('tabWeek').classList.toggle('active', view === 'week');
+    document.getElementById('tabMonth').classList.toggle('active', view === 'month');
+    listViewEl.style.display = view === 'list' ? 'block' : 'none';
+    weekViewEl.style.display = view === 'week' ? 'block' : 'none';
+    monthViewEl.style.display = view === 'month' ? 'block' : 'none';
+
+    if (view === 'list') renderList();
+    else if (view === 'week') renderWeek();
+    else renderMonth();
+  }
+
+  document.getElementById('tabList').addEventListener('click', () => { view = 'list'; render(); });
+  document.getElementById('tabWeek').addEventListener('click', () => { view = 'week'; render(); });
+  document.getElementById('tabMonth').addEventListener('click', () => { view = 'month'; render(); });
+
+  // ==========================================================
+  // LIST VIEW
+  // ==========================================================
+  function renderList() {
     taskList.innerHTML = '';
     taskCount.textContent = tasks.length + (tasks.length === 1 ? ' task' : ' tasks');
     emptyState.style.display = tasks.length === 0 ? 'block' : 'none';
 
     tasks.forEach((task, i) => {
       const li = document.createElement('li');
-      li.className = 'task';
+      li.className = 'task' + (task.completed ? ' completed' : '');
 
       const top = document.createElement('div');
       top.className = 'task-top';
 
-      const num = document.createElement('span');
-      num.className = 'task-num';
-      num.textContent = (i + 1) + '.';
-      top.appendChild(num);
+      // Checkable bullet
+      const check = document.createElement('button');
+      check.className = 'task-check' + (task.completed ? ' done' : '');
+      check.textContent = task.completed ? '✓' : '';
+      check.title = task.completed ? 'Mark as not done' : 'Mark as done';
+      check.onclick = () => toggleTaskComplete(task);
+      top.appendChild(check);
 
       const textWrap = document.createElement('div');
       textWrap.className = 'task-text';
@@ -448,17 +844,17 @@
         textWrap.appendChild(timeInput);
       } else {
         const label = document.createElement('div');
+        label.className = 'task-label' + (task.completed ? ' completed' : '');
         label.textContent = task.text;
         textWrap.appendChild(label);
 
         if (task.dueAt) {
           const info = formatDue(task.dueAt);
           const sched = document.createElement('div');
-          sched.className = 'task-schedule' + (info.overdue ? ' overdue-text' : '');
-          sched.setAttribute('data-index', i);
+          sched.className = 'task-schedule' + (info.overdue && !task.completed ? ' overdue-text' : '');
           sched.textContent = info.text;
           textWrap.appendChild(sched);
-          if (info.overdue) li.classList.add('overdue');
+          if (info.overdue && !task.completed) li.classList.add('overdue');
         }
       }
       top.appendChild(textWrap);
@@ -482,12 +878,32 @@
         const delBtn = document.createElement('button');
         delBtn.className = 'btn-delete';
         delBtn.textContent = 'Delete';
-        delBtn.onclick = () => deleteTask(i);
+        delBtn.onclick = () => deleteTask(task.id);
         actions.appendChild(delBtn);
       }
 
       top.appendChild(actions);
       li.appendChild(top);
+
+      // ---- Subtasks ----
+      const subtasks = task.subtasks || [];
+      if (subtasks.length > 0) {
+        const subWrap = document.createElement('div');
+        subWrap.className = 'subtasks';
+        subtasks.forEach(sub => subWrap.appendChild(renderSubtaskRow(task, sub)));
+        li.appendChild(subWrap);
+      }
+
+      if (addingSubtaskFor === task.id) {
+        li.appendChild(renderAddSubtaskRow(task));
+      } else {
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-subtask-toggle';
+        addBtn.textContent = '+ Subtask';
+        addBtn.onclick = () => { addingSubtaskFor = task.id; render(); };
+        li.appendChild(addBtn);
+      }
+
       taskList.appendChild(li);
     });
 
@@ -501,14 +917,128 @@
         });
       }
     }
+    const newSubInput = document.getElementById('newSubtaskInput');
+    if (newSubInput) newSubInput.focus();
   }
 
-  function toLocalInputValue(date) {
-    const pad = n => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  function renderSubtaskRow(task, sub) {
+    const isEditing = editingSub && editingSub.taskId === task.id && editingSub.subId === sub.id;
+    const row = document.createElement('div');
+    row.className = 'subtask';
+
+    const check = document.createElement('button');
+    check.className = 'subtask-check' + (sub.completed ? ' done' : '');
+    check.textContent = sub.completed ? '✓' : '';
+    check.title = sub.completed ? 'Mark as not done' : 'Mark as done';
+    check.onclick = () => toggleSubComplete(task, sub);
+    row.appendChild(check);
+
+    const textWrap = document.createElement('div');
+    textWrap.className = 'subtask-text';
+
+    if (isEditing) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = sub.text;
+      input.id = 'subEditInput';
+      textWrap.appendChild(input);
+
+      const timeInput = document.createElement('input');
+      timeInput.type = 'datetime-local';
+      timeInput.className = 'edit-time';
+      timeInput.id = 'subEditTimeInput';
+      if (sub.dueAt) timeInput.value = toLocalInputValue(new Date(sub.dueAt));
+      textWrap.appendChild(timeInput);
+    } else {
+      const label = document.createElement('div');
+      label.className = 'subtask-label' + (sub.completed ? ' completed' : '');
+      label.textContent = sub.text;
+      textWrap.appendChild(label);
+
+      if (sub.dueAt) {
+        const info = formatDue(sub.dueAt);
+        const sched = document.createElement('div');
+        sched.className = 'subtask-schedule' + (info.overdue && !sub.completed ? ' overdue-text' : '');
+        sched.textContent = info.text;
+        textWrap.appendChild(sched);
+      }
+    }
+    row.appendChild(textWrap);
+
+    const actions = document.createElement('div');
+    actions.className = 'subtask-actions';
+
+    if (isEditing) {
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.onclick = () => saveSubEdit(task, sub);
+      actions.appendChild(saveBtn);
+    } else {
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = () => { editingSub = { taskId: task.id, subId: sub.id }; render(); };
+      actions.appendChild(editBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-delete';
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = () => deleteSubtask(task.id, sub.id);
+      actions.appendChild(delBtn);
+    }
+    row.appendChild(actions);
+
+    if (isEditing) {
+      setTimeout(() => {
+        const inp = document.getElementById('subEditInput');
+        if (inp) {
+          inp.focus();
+          inp.setSelectionRange(inp.value.length, inp.value.length);
+          inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveSubEdit(task, sub); });
+        }
+      }, 0);
+    }
+
+    return row;
   }
 
-  // ---- Actions ----
+  function renderAddSubtaskRow(task) {
+    const wrap = document.createElement('div');
+    wrap.className = 'add-subtask-row';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Add a subtask...';
+    input.id = 'newSubtaskInput';
+    wrap.appendChild(input);
+
+    const row2 = document.createElement('div');
+    row2.className = 'row2';
+
+    const timeInput = document.createElement('input');
+    timeInput.type = 'datetime-local';
+    row2.appendChild(timeInput);
+
+    const addBtn = document.createElement('button');
+    addBtn.textContent = 'Add';
+    addBtn.onclick = () => addSubtask(task, input.value, timeInput.value);
+    row2.appendChild(addBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => { addingSubtaskFor = null; render(); };
+    row2.appendChild(cancelBtn);
+
+    wrap.appendChild(row2);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addSubtask(task, input.value, timeInput.value);
+    });
+
+    return wrap;
+  }
+
+  // ---- List view actions ----
   async function addTask() {
     const value = newTaskInput.value.trim();
     if (!value) return;
@@ -526,12 +1056,17 @@
     const newDueAt = editTimeInput.value ? new Date(editTimeInput.value).toISOString() : null;
     const task = tasks[i];
     editingIndex = null;
-    await updateTaskOnServer(task.id, value || task.text, newDueAt);
+    await updateTaskOnServer(task.id, { text: value || task.text, dueAt: newDueAt });
     await loadTasks();
   }
 
-  async function deleteTask(i) {
-    await deleteTaskOnServer(tasks[i].id);
+  async function toggleTaskComplete(task) {
+    await updateTaskOnServer(task.id, { completed: !task.completed });
+    await loadTasks();
+  }
+
+  async function deleteTask(id) {
+    await deleteTaskOnServer(id);
     await loadTasks();
   }
 
@@ -543,10 +1078,225 @@
     }
   }
 
+  async function addSubtask(task, text, timeValue) {
+    const value = text.trim();
+    if (!value) return;
+    const dueAt = timeValue ? new Date(timeValue).toISOString() : null;
+    addingSubtaskFor = null;
+    await createSubtaskOnServer(task.id, value, dueAt);
+    await loadTasks();
+  }
+
+  async function saveSubEdit(task, sub) {
+    const input = document.getElementById('subEditInput');
+    const timeInput = document.getElementById('subEditTimeInput');
+    const value = input.value.trim();
+    const newDueAt = timeInput.value ? new Date(timeInput.value).toISOString() : null;
+    editingSub = null;
+    await updateSubtaskOnServer(task.id, sub.id, { text: value || sub.text, dueAt: newDueAt });
+    await loadTasks();
+  }
+
+  async function toggleSubComplete(task, sub) {
+    await updateSubtaskOnServer(task.id, sub.id, { completed: !sub.completed });
+    await loadTasks();
+  }
+
+  async function deleteSubtask(taskId, subId) {
+    await deleteSubtaskOnServer(taskId, subId);
+    await loadTasks();
+  }
+
   document.getElementById('addBtn').addEventListener('click', addTask);
   document.getElementById('clearAllBtn').addEventListener('click', clearAll);
   newTaskInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') addTask();
+  });
+
+  // ==========================================================
+  // SHARED: flatten tasks + subtasks that have a due date
+  // ==========================================================
+  function buildOccurrences() {
+    const list = [];
+    tasks.forEach(task => {
+      if (task.dueAt) {
+        const d = new Date(task.dueAt);
+        list.push({ dateKey: toDateKey(d), time: d, text: task.text, completed: task.completed, isSub: false, taskId: task.id, task });
+      }
+      (task.subtasks || []).forEach(sub => {
+        if (sub.dueAt) {
+          const d = new Date(sub.dueAt);
+          list.push({ dateKey: toDateKey(d), time: d, text: sub.text, completed: sub.completed, isSub: true, taskId: task.id, subId: sub.id, parentText: task.text, task, sub });
+        }
+      });
+    });
+    list.sort((a, b) => a.time - b.time);
+    return list;
+  }
+
+  function renderOccRow(occ) {
+    const row = document.createElement('div');
+    row.className = 'occ-row';
+
+    const check = document.createElement('button');
+    check.className = (occ.isSub ? 'subtask-check' : 'task-check') + (occ.completed ? ' done' : '');
+    check.textContent = occ.completed ? '✓' : '';
+    check.onclick = () => {
+      if (occ.isSub) toggleSubComplete(occ.task, occ.sub);
+      else toggleTaskComplete(occ.task);
+    };
+    row.appendChild(check);
+
+    const textWrap = document.createElement('div');
+    textWrap.className = 'occ-text' + (occ.completed ? ' completed' : '');
+    if (occ.isSub) {
+      const parent = document.createElement('span');
+      parent.className = 'occ-parent';
+      parent.textContent = occ.parentText;
+      textWrap.appendChild(parent);
+    }
+    textWrap.appendChild(document.createTextNode(occ.text));
+    row.appendChild(textWrap);
+
+    const now = new Date();
+    const time = document.createElement('span');
+    time.className = 'occ-time' + (occ.time < now && !occ.completed ? ' overdue-text' : '');
+    time.textContent = occ.time.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    row.appendChild(time);
+
+    return row;
+  }
+
+  // ==========================================================
+  // WEEK VIEW
+  // ==========================================================
+  const weekDaysEl = document.getElementById('weekDays');
+  const weekLabelEl = document.getElementById('weekLabel');
+
+  function renderWeek() {
+    const occurrences = buildOccurrences();
+    const base = startOfWeek(new Date());
+    base.setDate(base.getDate() + weekOffset * 7);
+    const todayKey = toDateKey(new Date());
+
+    const first = new Date(base);
+    const last = new Date(base);
+    last.setDate(last.getDate() + 6);
+    weekLabelEl.textContent = `${first.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${last.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+
+    weekDaysEl.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + i);
+      const key = toDateKey(d);
+
+      const dayEl = document.createElement('div');
+      dayEl.className = 'week-day' + (key === todayKey ? ' today' : '');
+
+      const header = document.createElement('div');
+      header.className = 'week-day-header';
+      header.textContent = d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+      dayEl.appendChild(header);
+
+      const dayOccs = occurrences.filter(o => o.dateKey === key);
+      if (dayOccs.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'occ-empty';
+        empty.textContent = 'No scheduled tasks';
+        dayEl.appendChild(empty);
+      } else {
+        dayOccs.forEach(occ => dayEl.appendChild(renderOccRow(occ)));
+      }
+
+      weekDaysEl.appendChild(dayEl);
+    }
+  }
+
+  document.getElementById('weekPrev').addEventListener('click', () => { weekOffset--; render(); });
+  document.getElementById('weekNext').addEventListener('click', () => { weekOffset++; render(); });
+  weekLabelEl.addEventListener('click', () => { weekOffset = 0; render(); });
+
+  // ==========================================================
+  // MONTH VIEW
+  // ==========================================================
+  const monthGridEl = document.getElementById('monthGrid');
+  const monthLabelEl = document.getElementById('monthLabel');
+  const selectedDayTitleEl = document.getElementById('selectedDayTitle');
+  const selectedDayListEl = document.getElementById('selectedDayList');
+
+  function renderMonth() {
+    const occurrences = buildOccurrences();
+    const occByDay = {};
+    occurrences.forEach(o => {
+      if (!occByDay[o.dateKey]) occByDay[o.dateKey] = [];
+      occByDay[o.dateKey].push(o);
+    });
+
+    monthLabelEl.textContent = monthCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+    const year = monthCursor.getFullYear();
+    const month = monthCursor.getMonth();
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayKey = toDateKey(new Date());
+
+    monthGridEl.innerHTML = '';
+
+    for (let i = 0; i < firstWeekday; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'month-cell empty';
+      monthGridEl.appendChild(cell);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(year, month, day);
+      const key = toDateKey(d);
+      const cell = document.createElement('div');
+      cell.className = 'month-cell';
+      if (key === todayKey) cell.classList.add('today');
+      if (key === selectedDayKey) cell.classList.add('selected');
+
+      const num = document.createElement('span');
+      num.textContent = day;
+      cell.appendChild(num);
+
+      if (occByDay[key] && occByDay[key].length > 0) {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        cell.appendChild(dot);
+      }
+
+      cell.onclick = () => { selectedDayKey = key; renderMonth(); };
+      monthGridEl.appendChild(cell);
+    }
+
+    // Selected day panel
+    const selDate = new Date(selectedDayKey + 'T00:00:00');
+    selectedDayTitleEl.textContent = selDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    selectedDayListEl.innerHTML = '';
+    const dayOccs = occByDay[selectedDayKey] || [];
+    if (dayOccs.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'occ-empty';
+      empty.textContent = 'No scheduled tasks';
+      selectedDayListEl.appendChild(empty);
+    } else {
+      dayOccs.forEach(occ => selectedDayListEl.appendChild(renderOccRow(occ)));
+    }
+  }
+
+  document.getElementById('monthPrev').addEventListener('click', () => {
+    monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
+    render();
+  });
+  document.getElementById('monthNext').addEventListener('click', () => {
+    monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
+    render();
+  });
+  monthLabelEl.addEventListener('click', () => {
+    monthCursor = startOfMonth(new Date());
+    selectedDayKey = toDateKey(new Date());
+    render();
   });
 
   // Register service worker (enables "Add to Home Screen" install + push notifications)

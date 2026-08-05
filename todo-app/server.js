@@ -2,9 +2,10 @@
 //
 // Serves the frontend (public/) and a small JSON API for tasks.
 // Sends real push notifications (via the Web Push protocol) at each
-// task's due time, checked once a minute — this works even if the
-// phone's browser/app is fully closed, as long as the phone has a
-// network connection and the app was installed/subscribed at least once.
+// task's (or subtask's) due time, checked once a minute — this works
+// even if the phone's browser/app is fully closed, as long as the
+// phone has a network connection and the app was installed/subscribed
+// at least once.
 
 require('dotenv').config();
 const express = require('express');
@@ -39,12 +40,37 @@ webpush.setVapidDetails(
 
 // ---- Storage ----
 // Simple JSON file, no database needed for a single-user app.
+function normalizeTask(t) {
+  return {
+    id: t.id,
+    text: t.text,
+    dueAt: t.dueAt || null,
+    completed: !!t.completed,
+    notified: !!t.notified,
+    subtasks: Array.isArray(t.subtasks) ? t.subtasks.map(normalizeSubtask) : [],
+  };
+}
+
+function normalizeSubtask(s) {
+  return {
+    id: s.id,
+    text: s.text,
+    dueAt: s.dueAt || null,
+    completed: !!s.completed,
+    notified: !!s.notified,
+  };
+}
+
 function loadData() {
   if (!fs.existsSync(DATA_FILE)) {
     return { tasks: [], subscriptions: [] };
   }
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    return {
+      tasks: Array.isArray(raw.tasks) ? raw.tasks.map(normalizeTask) : [],
+      subscriptions: Array.isArray(raw.subscriptions) ? raw.subscriptions : [],
+    };
   } catch (e) {
     return { tasks: [], subscriptions: [] };
   }
@@ -58,6 +84,10 @@ let data = loadData();
 
 function nextId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function findTask(id) {
+  return data.tasks.find(t => t.id === id);
 }
 
 // ---- Middleware ----
@@ -97,7 +127,9 @@ app.post('/api/tasks', (req, res) => {
     id: nextId(),
     text: text.trim(),
     dueAt: dueAt || null,
+    completed: false,
     notified: false,
+    subtasks: [],
   };
   data.tasks.push(task);
   saveData(data);
@@ -105,15 +137,16 @@ app.post('/api/tasks', (req, res) => {
 });
 
 app.put('/api/tasks/:id', (req, res) => {
-  const task = data.tasks.find(t => t.id === req.params.id);
+  const task = findTask(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
-  const { text, dueAt } = req.body;
+  const { text, dueAt, completed } = req.body;
   if (typeof text === 'string' && text.trim()) task.text = text.trim();
   if (dueAt !== undefined) {
     if (dueAt !== task.dueAt) task.notified = false; // allow re-notify on reschedule
     task.dueAt = dueAt;
   }
+  if (typeof completed === 'boolean') task.completed = completed;
   saveData(data);
   res.json(task);
 });
@@ -126,6 +159,52 @@ app.delete('/api/tasks/:id', (req, res) => {
 
 app.delete('/api/tasks', (req, res) => {
   data.tasks = [];
+  saveData(data);
+  res.status(204).end();
+});
+
+// ---- API: subtasks ----
+app.post('/api/tasks/:id/subtasks', (req, res) => {
+  const task = findTask(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  const { text, dueAt } = req.body;
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'Subtask text is required' });
+  }
+  const subtask = {
+    id: nextId(),
+    text: text.trim(),
+    dueAt: dueAt || null,
+    completed: false,
+    notified: false,
+  };
+  task.subtasks.push(subtask);
+  saveData(data);
+  res.status(201).json(subtask);
+});
+
+app.put('/api/tasks/:id/subtasks/:subId', (req, res) => {
+  const task = findTask(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  const subtask = task.subtasks.find(s => s.id === req.params.subId);
+  if (!subtask) return res.status(404).json({ error: 'Subtask not found' });
+
+  const { text, dueAt, completed } = req.body;
+  if (typeof text === 'string' && text.trim()) subtask.text = text.trim();
+  if (dueAt !== undefined) {
+    if (dueAt !== subtask.dueAt) subtask.notified = false;
+    subtask.dueAt = dueAt;
+  }
+  if (typeof completed === 'boolean') subtask.completed = completed;
+  saveData(data);
+  res.json(subtask);
+});
+
+app.delete('/api/tasks/:id/subtasks/:subId', (req, res) => {
+  const task = findTask(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  task.subtasks = task.subtasks.filter(s => s.id !== req.params.subId);
   saveData(data);
   res.status(204).end();
 });
@@ -151,15 +230,22 @@ async function sendPushToAll(payload) {
   }
 }
 
-// Check every minute for tasks that just became due.
+// Check every minute for tasks (and subtasks) that just became due.
 cron.schedule('* * * * *', async () => {
   const now = Date.now();
   let changed = false;
   for (const task of data.tasks) {
-    if (task.dueAt && !task.notified && new Date(task.dueAt).getTime() <= now) {
+    if (!task.completed && task.dueAt && !task.notified && new Date(task.dueAt).getTime() <= now) {
       await sendPushToAll({ title: 'Task due now', body: task.text });
       task.notified = true;
       changed = true;
+    }
+    for (const sub of task.subtasks) {
+      if (!sub.completed && sub.dueAt && !sub.notified && new Date(sub.dueAt).getTime() <= now) {
+        await sendPushToAll({ title: 'Subtask due now', body: `${task.text} — ${sub.text}` });
+        sub.notified = true;
+        changed = true;
+      }
     }
   }
   if (changed) saveData(data);
